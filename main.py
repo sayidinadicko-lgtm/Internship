@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 import anthropic
 
 from scrapers import scrape_indeed, scrape_hellowork
-from cv_optimizer import optimize_cv, generate_cover_letter, build_cv_docx, build_cover_letter_docx
+from cv_optimizer import optimize_cv, generate_cover_letter, build_cv_docx, build_cover_letter_docx, docx_to_pdf
 
 load_dotenv()
 
@@ -61,13 +61,25 @@ def process_job(job: dict, cv_data: dict, client: anthropic.Anthropic, output_di
         print(f"  ✗ Erreur génération LM : {e}")
         letter = None
 
-    # 3. Générer les fichiers .docx
+    # 3. Générer les fichiers .docx puis convertir en PDF
     cv_path = output_dir / f"CV_{slug}.docx"
     build_cv_docx(optimized, str(cv_path))
+    print("  → Conversion CV en PDF...")
+    try:
+        cv_pdf = docx_to_pdf(str(cv_path), str(output_dir))
+        print(f"  ✓ CV PDF : {cv_pdf}")
+    except Exception as e:
+        print(f"  ✗ Conversion CV PDF échouée : {e}")
 
     if letter:
         lm_path = output_dir / f"LM_{slug}.docx"
         build_cover_letter_docx(letter, str(lm_path))
+        print("  → Conversion lettre de motivation en PDF...")
+        try:
+            lm_pdf = docx_to_pdf(str(lm_path), str(output_dir))
+            print(f"  ✓ LM PDF : {lm_pdf}")
+        except Exception as e:
+            print(f"  ✗ Conversion LM PDF échouée : {e}")
 
     # 4. Sauvegarder les données JSON (pour relecture/debug)
     json_path = output_dir / f"data_{slug}.json"
