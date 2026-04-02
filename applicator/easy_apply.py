@@ -156,6 +156,19 @@ def apply_easy_apply(
         driver.get(job_url)
         _human_delay(3, 5)
 
+        # Attendre que le contenu de l'offre soit chargé (pas juste la nav)
+        try:
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,
+                "h1, .jobs-unified-top-card, .job-details-jobs-unified-top-card__job-title"
+            )))
+        except Exception:
+            pass
+        # Scroll pour déclencher le chargement du panneau de droite
+        driver.execute_script("window.scrollTo(0, 300);")
+        _human_delay(2, 3)
+        driver.execute_script("window.scrollTo(0, 0);")
+        _human_delay(2, 3)
+
         # Cliquer sur le bouton Easy Apply — cherche par texte dans tous les boutons
         apply_btn = None
         for attempt in range(3):
@@ -171,7 +184,7 @@ def apply_easy_apply(
                             visible_btns.append(f"'{txt}' / aria='{aria}'")
                 except Exception:
                     continue
-            logger.info(f"[EasyApply] Boutons visibles : {visible_btns[:10]}")
+            logger.info(f"[EasyApply] Boutons visibles ({len(visible_btns)}) : {visible_btns[:15]}")
 
             for btn in buttons:
                 try:
