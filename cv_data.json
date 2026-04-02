@@ -1,0 +1,79 @@
+{
+  "personal_info": {
+    "first_name": "PRENOM",
+    "last_name": "NOM",
+    "email": "prenom.nom@example.com",
+    "phone": "+33 6 XX XX XX XX",
+    "linkedin": "linkedin.com/in/profil",
+    "github": "github.com/profil"
+  },
+  "education": [
+    {
+      "degree": "Baccalauréat Scientifique",
+      "school": "Lycée [Nom], Fatick, Sénégal",
+      "year": "2020",
+      "mention": ""
+    },
+    {
+      "degree": "CPGE PT (Physique et Technologie)",
+      "school": "Classe Préparatoire aux Grandes Écoles, Lille",
+      "year": "2020 – 2022",
+      "mention": ""
+    },
+    {
+      "degree": "Cycle Ingénieur – Spécialité Microélectronique",
+      "school": "Polytech Marseille, Aix-Marseille Université",
+      "year": "2022 – 2025",
+      "mention": "5ème année (dernière année)"
+    }
+  ],
+  "skills": {
+    "hardware_design": ["VHDL", "Verilog", "SystemVerilog", "FPGA", "Vivado", "Quartus", "Conception ASIC"],
+    "embedded_ai": ["TensorFlow Lite", "Edge Impulse", "Quantification de modèles", "Pruning", "TinyML", "ONNX"],
+    "programming": ["C", "C++", "Python", "MATLAB", "Assembly ARM"],
+    "embedded_systems": ["STM32", "Arduino", "Raspberry Pi", "ESP32", "protocoles UART/SPI/I2C/CAN"],
+    "ai_ml": ["TensorFlow", "PyTorch", "scikit-learn", "Réseaux de neurones CNN/RNN", "traitement du signal"],
+    "tools": ["Git", "Linux", "Makefile", "Keil MDK", "STM32CubeIDE", "LTSpice", "Cadence"],
+    "other": ["LaTeX", "Microsoft Office"]
+  },
+  "projects": [
+    {
+      "title": "Implémentation d'un réseau de neurones sur FPGA",
+      "description": "Conception et implémentation d'un CNN léger pour la classification d'images sur cible FPGA Xilinx, avec optimisation mémoire et pipeline de traitement.",
+      "technologies": ["VHDL", "Python", "TensorFlow Lite", "Vivado"],
+      "year": "2024"
+    },
+    {
+      "title": "Système de détection de gestes embarqué",
+      "description": "Développement d'un système embarqué sur STM32 intégrant un modèle TinyML pour la reconnaissance de gestes en temps réel via capteur IMU.",
+      "technologies": ["C", "STM32", "Edge Impulse", "TensorFlow Lite"],
+      "year": "2024"
+    },
+    {
+      "title": "Conception d'un processeur RISC-V simplifié",
+      "description": "Implémentation d'un cœur RISC-V 32 bits (pipeline 5 étages) en VHDL sur FPGA avec gestion des aléas et du cache L1.",
+      "technologies": ["VHDL", "RISC-V", "Vivado", "Assembly"],
+      "year": "2023"
+    }
+  ],
+  "experience": [
+    {
+      "title": "Stage – [Titre du stage]",
+      "company": "[Entreprise]",
+      "location": "[Ville]",
+      "period": "[Mois Année – Mois Année]",
+      "description": "[Description des missions effectuées]"
+    }
+  ],
+  "languages": [
+    {"language": "Français", "level": "Courant (C1)"},
+    {"language": "Anglais", "level": "Intermédiaire (B2)"},
+    {"language": "Wolof", "level": "Langue maternelle"}
+  ],
+  "interests": [
+    "Intelligence artificielle et systèmes embarqués",
+    "Robotique",
+    "Électronique DIY",
+    "Football"
+  ]
+}
