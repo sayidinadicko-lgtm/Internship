@@ -42,11 +42,11 @@ def run_post_job(slot: str) -> None:
         audio = get_recommendation(slot)
         logger.info("Audio: %s – %s (%s BPM)", audio.title, audio.artist, audio.bpm)
 
-        # Step 4: Render image
-        image_path = render_post(content)
+        # Step 4: Render carousel (2 slides FR + EN)
+        image_paths = render_post(content)
 
         # Step 5: Upload
-        media_id = upload_post(image_path, content, audio)
+        media_id = upload_post(image_paths, content, audio)
 
         # Step 6: Record
         record_post(
