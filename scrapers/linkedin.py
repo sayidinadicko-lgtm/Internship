@@ -195,22 +195,22 @@ def _extract_job_details(driver: webdriver.Chrome, wait: WebDriverWait, job_url:
         except Exception:
             pass
 
-    # Détecter Easy Apply
+    # Détecter Easy Apply — chercher le bouton par texte ET aria-label
+    details["easy_apply"] = False
     try:
-        apply_btn = driver.find_element(
-            By.CSS_SELECTOR,
-            "button.jobs-apply-button, "
-            "button[aria-label*='Easy Apply'], "
-            "button[aria-label*='Candidature simplifiée']"
-        )
-        btn_text = apply_btn.text.lower()
-        details["easy_apply"] = (
-            "easy apply" in btn_text
-            or "candidature simplifiée" in btn_text
-            or "easy" in btn_text
-        )
-    except NoSuchElementException:
-        details["easy_apply"] = False
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+        for btn in buttons:
+            try:
+                btn_text = (btn.text or "").lower()
+                aria = (btn.get_attribute("aria-label") or "").lower()
+                if ("easy apply" in btn_text or "candidature simplifiée" in btn_text
+                        or "easy apply" in aria or "candidature simplifiée" in aria):
+                    details["easy_apply"] = True
+                    break
+            except Exception:
+                continue
+    except Exception:
+        pass
 
     return details
 
@@ -248,6 +248,7 @@ def scrape_linkedin(
             f"?keywords={encoded_query}"
             f"&location={encoded_location}"
             f"&f_JT=I"          # I = Internship
+            f"&f_AL=true"       # Easy Apply uniquement
             f"&f_TPR=r2592000"  # 30 derniers jours
             f"&sortBy=R"        # Pertinence
         )
@@ -260,7 +261,9 @@ def scrape_linkedin(
         job_links = []
         scroll_attempts = 0
 
-        while len(job_links) < max_jobs and scroll_attempts < 5:
+        # On scanne jusqu'à 3x plus d'offres pour trouver assez d'Easy Apply
+        scan_limit = max_jobs * 3
+        while len(job_links) < scan_limit and scroll_attempts < 8:
             cards = driver.find_elements(
                 By.CSS_SELECTOR,
                 "a.job-card-list__title, a.job-card-container__link"
@@ -269,21 +272,26 @@ def scrape_linkedin(
                 href = card.get_attribute("href")
                 if href and "/jobs/view/" in href and href not in job_links:
                     job_links.append(href.split("?")[0])
-                if len(job_links) >= max_jobs:
+                if len(job_links) >= scan_limit:
                     break
 
-            if len(job_links) < max_jobs:
+            if len(job_links) < scan_limit:
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 _human_delay(2, 3)
                 scroll_attempts += 1
 
         logger.info(f"[LinkedIn] {len(job_links)} offres trouvées.")
 
-        # Extraire les détails de chaque offre
-        for i, url in enumerate(job_links[:max_jobs]):
-            logger.info(f"[LinkedIn] Offre {i+1}/{len(job_links[:max_jobs])} : {url}")
+        # Extraire les détails de chaque offre — s'arrêter quand on a max_jobs Easy Apply
+        for i, url in enumerate(job_links):
+            if len(jobs) >= max_jobs:
+                break
+            logger.info(f"[LinkedIn] Scan offre {i+1}/{len(job_links)} (Easy Apply trouvés: {len(jobs)}/{max_jobs}) : {url}")
             try:
                 job = _extract_job_details(driver, wait, url)
+                if not job["easy_apply"]:
+                    logger.info("  → Pas Easy Apply, ignorée.")
+                    continue
                 if job["title"] and job["description"]:
                     jobs.append(job)
                     logger.info(

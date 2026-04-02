@@ -157,3 +157,75 @@ def send_offer_notification(
         logger.info(f"[Email] Notification envoyée pour {job['title']} chez {job['company']}")
     except Exception as e:
         logger.error(f"[Email] Échec envoi notification : {e}")
+
+
+def send_daily_summary(
+    gmail_address: str,
+    gmail_app_password: str,
+    to_email: str,
+    applied_jobs: list[dict],
+    date_str: str = None,
+):
+    """
+    Envoie un mail récapitulatif quotidien listant toutes les candidatures soumises.
+    """
+    from datetime import date
+    if not date_str:
+        date_str = date.today().strftime("%d/%m/%Y")
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"✅ Récap du jour — {len(applied_jobs)} candidatures envoyées ({date_str})"
+    msg["From"] = gmail_address
+    msg["To"] = to_email
+
+    rows = ""
+    for i, job in enumerate(applied_jobs, 1):
+        bg = "#f5f5f5" if i % 2 == 0 else "#ffffff"
+        rows += f"""
+        <tr style="background:{bg};">
+          <td style="padding:8px; text-align:center; font-weight:bold;">{i}</td>
+          <td style="padding:8px;">{job.get('title', 'N/A')}</td>
+          <td style="padding:8px;">{job.get('company', 'N/A')}</td>
+          <td style="padding:8px;">{job.get('location', 'N/A')}</td>
+          <td style="padding:8px; text-align:center;">
+            <a href="{job.get('url', '#')}" style="color:#0a66c2;">Voir</a>
+          </td>
+        </tr>"""
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 700px; margin: auto;">
+      <h2 style="color: #0a66c2;">✅ Récapitulatif des candidatures — {date_str}</h2>
+      <p style="font-size:16px;">
+        <strong>{len(applied_jobs)} candidatures</strong> ont été soumises automatiquement aujourd'hui via LinkedIn Easy Apply.
+      </p>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+        <thead>
+          <tr style="background:#0a66c2; color:white;">
+            <th style="padding:10px;">#</th>
+            <th style="padding:10px; text-align:left;">Poste</th>
+            <th style="padding:10px; text-align:left;">Entreprise</th>
+            <th style="padding:10px; text-align:left;">Localisation</th>
+            <th style="padding:10px;">Lien</th>
+          </tr>
+        </thead>
+        <tbody>{rows}</tbody>
+      </table>
+
+      <p style="margin-top:20px; color:#666; font-size:13px;">
+        Toutes ces candidatures ont été soumises avec ton CV et ta lettre de motivation personnalisés.<br>
+        Tu peux recevoir des réponses directement sur <strong>sayidina.dicko@etu.univ-amu.fr</strong>.
+      </p>
+      <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
+      <p style="color:#999; font-size:12px;">CV Optimizer — Internship Automation</p>
+    </body></html>
+    """
+
+    msg.attach(MIMEText(html, "html"))
+
+    try:
+        with _build_smtp(gmail_address, gmail_app_password) as server:
+            server.sendmail(gmail_address, to_email, msg.as_string())
+        logger.info(f"[Email] Récapitulatif envoyé : {len(applied_jobs)} candidatures.")
+    except Exception as e:
+        logger.error(f"[Email] Échec envoi récapitulatif : {e}")

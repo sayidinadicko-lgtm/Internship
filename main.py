@@ -26,7 +26,7 @@ import anthropic
 
 from scrapers import scrape_indeed, scrape_hellowork
 from cv_optimizer import optimize_cv, generate_cover_letter, build_cv_docx, build_cover_letter_docx, docx_to_pdf
-from notifier.email_sender import send_applied_confirmation, send_offer_notification
+from notifier.email_sender import send_applied_confirmation, send_offer_notification, send_daily_summary
 
 load_dotenv()
 
@@ -87,22 +87,15 @@ def process_job_linkedin(
     client: anthropic.Anthropic,
     output_dir: Path,
     driver,
-    gmail_address: str,
-    gmail_app_password: str,
-    notify_email: str,
-):
+) -> bool:
     """
-    Traite une offre LinkedIn :
-    - Easy Apply → postule automatiquement + mail de confirmation
-    - Non Easy Apply → génère CV+LM + mail de notification avec pièces jointes
+    Postule à une offre LinkedIn Easy Apply.
+    Retourne True si la candidature a été soumise avec succès.
     """
     from applicator.easy_apply import apply_easy_apply
 
-    title = job['title']
-    company = job['company']
     print(f"\n{'='*60}")
-    print(f"  {title} — {company}")
-    print(f"  Easy Apply : {'OUI' if job['easy_apply'] else 'NON'}")
+    print(f"  {job['title']} — {job['company']}")
     print(f"{'='*60}")
 
     print("  → Génération CV + LM...")
@@ -110,28 +103,15 @@ def process_job_linkedin(
         cv_docx, cv_pdf, lm_docx = generate_docs(job, cv_data, client, output_dir)
     except Exception as e:
         logger.error(f"  Erreur génération docs : {e}")
-        return
+        return False
 
-    if job["easy_apply"]:
-        print("  → Candidature Easy Apply en cours...")
-        success = apply_easy_apply(driver, job["url"], cv_data, cv_pdf)
-        if success:
-            print(f"  ✓ Candidature soumise !")
-            if gmail_address and gmail_app_password:
-                send_applied_confirmation(gmail_address, gmail_app_password, notify_email, job)
-                print(f"  ✓ Mail de confirmation envoyé à {notify_email}")
-        else:
-            print("  ✗ Easy Apply échoué — envoi du mail de notification à la place.")
-            if gmail_address and gmail_app_password:
-                send_offer_notification(gmail_address, gmail_app_password, notify_email, job, cv_docx, lm_docx)
-                print(f"  ✓ Mail de notification envoyé à {notify_email}")
+    print("  → Candidature Easy Apply en cours...")
+    success = apply_easy_apply(driver, job["url"], cv_data, cv_pdf)
+    if success:
+        print(f"  ✓ Candidature soumise !")
     else:
-        print("  → Pas de Easy Apply — envoi du mail de notification...")
-        if gmail_address and gmail_app_password:
-            send_offer_notification(gmail_address, gmail_app_password, notify_email, job, cv_docx, lm_docx)
-            print(f"  ✓ Mail envoyé à {notify_email} avec CV + LM en pièces jointes")
-        else:
-            print(f"  ℹ Fichiers générés dans {output_dir} (mail non configuré)")
+        print(f"  ✗ Easy Apply échoué pour cette offre.")
+    return success
 
 
 def process_job_classic(job: dict, cv_data: dict, client: anthropic.Anthropic, output_dir: Path):
@@ -160,8 +140,8 @@ def main():
         default="linkedin",
         help="Source de scraping (défaut : linkedin)",
     )
-    parser.add_argument("--max", type=int, default=10,
-                        help="Nombre max d'offres par source (défaut : 10)")
+    parser.add_argument("--max", type=int, default=20,
+                        help="Nombre de candidatures Easy Apply à soumettre (défaut : 20)")
     parser.add_argument(
         "--query", type=str,
         default="stage microelectronique IA embarquée intelligence artificielle",
@@ -220,20 +200,27 @@ def main():
         print(f"[LinkedIn] {len(linkedin_jobs)} offre(s) trouvée(s).")
 
         if linkedin_jobs:
-            from selenium.webdriver.chrome.options import Options
-            from selenium import webdriver
             from scrapers.linkedin import _login, _build_driver
 
             driver = _build_driver(headless=args.headless)
             _login(driver, linkedin_email, linkedin_password)
 
+            applied_jobs = []
             for i, job in enumerate(linkedin_jobs, 1):
                 print(f"\n[LinkedIn {i}/{len(linkedin_jobs)}]")
-                process_job_linkedin(
-                    job, cv_data, client, output_dir,
-                    driver, gmail_address, gmail_app_password, notify_email,
-                )
+                success = process_job_linkedin(job, cv_data, client, output_dir, driver)
+                if success:
+                    applied_jobs.append(job)
+
             driver.quit()
+
+            # Mail récapitulatif unique
+            if applied_jobs and gmail_address and gmail_app_password:
+                print(f"\n→ Envoi du récapitulatif : {len(applied_jobs)} candidatures soumises...")
+                send_daily_summary(gmail_address, gmail_app_password, notify_email, applied_jobs)
+                print(f"✓ Récapitulatif envoyé à {notify_email}")
+            else:
+                print(f"\nAucune candidature Easy Apply soumise aujourd'hui.")
 
     # --- Scraping Indeed ---
     if args.source in ("indeed", "all"):
