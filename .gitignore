@@ -1,0 +1,30 @@
+# Secrets
+.env
+
+# Instagram session (contains auth tokens)
+data/session/
+
+# Generated images (ephemeral)
+data/generated/
+!data/generated/.gitkeep
+
+# Logs
+data/logs/*.log
+!data/logs/.gitkeep
+
+# Post history (runtime state, not source)
+data/post_history.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+*.egg
+
+# OS
+.DS_Store
+Thumbs.db
