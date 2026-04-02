@@ -10,6 +10,7 @@ import time
 import random
 import logging
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
@@ -24,6 +25,25 @@ MAX_STEPS = 10  # Nombre max d'étapes dans le formulaire
 
 def _human_delay(min_s: float = 0.5, max_s: float = 1.5):
     time.sleep(random.uniform(min_s, max_s))
+
+
+def _click_with_indicator(driver: webdriver.Chrome, element):
+    """Affiche un cercle rouge à l'endroit du clic, puis clique."""
+    driver.execute_script("""
+        var el = arguments[0];
+        var rect = el.getBoundingClientRect();
+        var x = rect.left + rect.width / 2 + window.scrollX;
+        var y = rect.top + rect.height / 2 + window.scrollY;
+        var dot = document.createElement('div');
+        dot.style.cssText = 'position:absolute;width:30px;height:30px;border-radius:50%;' +
+            'background:red;opacity:0.85;z-index:99999;pointer-events:none;' +
+            'border:3px solid darkred;box-shadow:0 0 8px red;' +
+            'left:' + (x - 15) + 'px;top:' + (y - 15) + 'px;';
+        document.body.appendChild(dot);
+        setTimeout(function(){ dot.remove(); }, 2000);
+    """, element)
+    time.sleep(0.4)
+    driver.execute_script("arguments[0].click();", element)
 
 
 def _fill_text_field(field, value: str):
@@ -208,7 +228,7 @@ def apply_easy_apply(
 
         driver.execute_script("arguments[0].scrollIntoView(true);", apply_btn)
         _human_delay(0.5, 1)
-        driver.execute_script("arguments[0].click();", apply_btn)
+        _click_with_indicator(driver, apply_btn)
         logger.info(f"[EasyApply] Formulaire ouvert pour {job_url}")
         _human_delay(2, 3)
 
@@ -243,7 +263,7 @@ def apply_easy_apply(
             if submit_btn:
                 driver.execute_script("arguments[0].scrollIntoView(true);", submit_btn)
                 _human_delay(0.5, 1)
-                driver.execute_script("arguments[0].click();", submit_btn)
+                _click_with_indicator(driver, submit_btn)
                 _human_delay(2, 3)
                 logger.info("[EasyApply] Candidature soumise avec succès.")
                 try:
@@ -258,7 +278,7 @@ def apply_easy_apply(
                 return True
 
             elif next_btn:
-                driver.execute_script("arguments[0].click();", next_btn)
+                _click_with_indicator(driver, next_btn)
                 _human_delay(1, 2)
             else:
                 # Essayer de trouver n'importe quel bouton primary
