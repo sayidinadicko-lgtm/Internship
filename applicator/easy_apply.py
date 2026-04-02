@@ -160,12 +160,26 @@ def apply_easy_apply(
         apply_btn = None
         for attempt in range(3):
             buttons = driver.find_elements(By.TAG_NAME, "button")
+            # Debug : afficher tous les boutons visibles
+            visible_btns = []
+            for btn in buttons:
+                try:
+                    if btn.is_displayed():
+                        txt = (btn.text or "").strip()
+                        aria = (btn.get_attribute("aria-label") or "").strip()
+                        if txt or aria:
+                            visible_btns.append(f"'{txt}' / aria='{aria}'")
+                except Exception:
+                    continue
+            logger.info(f"[EasyApply] Boutons visibles : {visible_btns[:10]}")
+
             for btn in buttons:
                 try:
                     txt = (btn.text or "").lower()
                     aria = (btn.get_attribute("aria-label") or "").lower()
                     if any(w in txt or w in aria for w in [
-                        "easy apply", "candidature simplifiée", "postuler maintenant"
+                        "easy apply", "candidature simplifiée", "postuler maintenant",
+                        "postuler", "apply", "candidater"
                     ]):
                         apply_btn = btn
                         break
