@@ -3,13 +3,19 @@
 CV Optimizer – Point d'entrée principal.
 
 Usage :
-    python main.py [--source indeed|hellowork|all] [--max N] [--query "..."]
+    python main.py [--source linkedin|indeed|hellowork|all] [--max N] [--query "..."]
 
-Variables d'environnement requises :
-    ANTHROPIC_API_KEY : clé API Anthropic (dans .env)
+Variables d'environnement requises (.env) :
+    ANTHROPIC_API_KEY      : clé API Anthropic
+    LINKEDIN_EMAIL         : email du compte LinkedIn
+    LINKEDIN_PASSWORD      : mot de passe LinkedIn
+    GMAIL_ADDRESS          : adresse Gmail pour les notifications
+    GMAIL_APP_PASSWORD     : mot de passe d'application Gmail
+    NOTIFY_EMAIL           : adresse qui reçoit les notifications (souvent = GMAIL_ADDRESS)
 """
 import argparse
 import json
+import logging
 import os
 import re
 import sys
@@ -20,12 +26,19 @@ import anthropic
 
 from scrapers import scrape_indeed, scrape_hellowork
 from cv_optimizer import optimize_cv, generate_cover_letter, build_cv_docx, build_cover_letter_docx, docx_to_pdf
+from notifier.email_sender import send_applied_confirmation, send_offer_notification
 
 load_dotenv()
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
 
 def slugify(text: str) -> str:
-    """Transforme un titre en nom de fichier valide."""
     text = text.lower().strip()
     text = re.sub(r"[^a-z0-9\s-]", "", text)
     text = re.sub(r"\s+", "_", text)
@@ -37,144 +50,212 @@ def load_cv_data(path: str = "cv_data.json") -> dict:
         return json.load(f)
 
 
-def process_job(job: dict, cv_data: dict, client: anthropic.Anthropic, output_dir: Path):
-    """Optimise le CV et génère la lettre de motivation pour une offre."""
+def generate_docs(job: dict, cv_data: dict, client: anthropic.Anthropic, output_dir: Path) -> tuple[str, str, str]:
+    """
+    Génère CV + LM pour une offre.
+    Retourne (cv_docx_path, cv_pdf_path, lm_docx_path).
+    """
     slug = slugify(f"{job['title']}_{job['company']}")
-    print(f"\n{'='*60}")
-    print(f"Traitement : {job['title']} – {job['company']}")
-    print(f"Source : {job['source']} | Lieu : {job['location']}")
-    print(f"{'='*60}")
 
-    # 1. Optimiser le CV
-    print("  → Optimisation du CV...")
+    optimized = optimize_cv(cv_data, job, client)
+    letter = generate_cover_letter(cv_data, optimized, job, client)
+
+    cv_docx = str(output_dir / f"CV_{slug}.docx")
+    lm_docx = str(output_dir / f"LM_{slug}.docx")
+    build_cv_docx(optimized, cv_docx)
+    build_cover_letter_docx(letter, lm_docx)
+
+    # Conversion PDF (pour l'upload LinkedIn)
+    cv_pdf = cv_docx
     try:
-        optimized = optimize_cv(cv_data, job, client)
+        cv_pdf = docx_to_pdf(cv_docx, str(output_dir))
     except Exception as e:
-        print(f"  ✗ Erreur optimisation CV : {e}")
-        return
+        logger.warning(f"Conversion PDF échouée, utilisation du .docx : {e}")
 
-    # 2. Générer la lettre de motivation
-    print("  → Génération de la lettre de motivation...")
-    try:
-        letter = generate_cover_letter(cv_data, optimized, job, client)
-    except Exception as e:
-        print(f"  ✗ Erreur génération LM : {e}")
-        letter = None
-
-    # 3. Générer les fichiers .docx puis convertir en PDF
-    cv_path = output_dir / f"CV_{slug}.docx"
-    build_cv_docx(optimized, str(cv_path))
-    print("  → Conversion CV en PDF...")
-    try:
-        cv_pdf = docx_to_pdf(str(cv_path), str(output_dir))
-        print(f"  ✓ CV PDF : {cv_pdf}")
-    except Exception as e:
-        print(f"  ✗ Conversion CV PDF échouée : {e}")
-
-    if letter:
-        lm_path = output_dir / f"LM_{slug}.docx"
-        build_cover_letter_docx(letter, str(lm_path))
-        print("  → Conversion lettre de motivation en PDF...")
-        try:
-            lm_pdf = docx_to_pdf(str(lm_path), str(output_dir))
-            print(f"  ✓ LM PDF : {lm_pdf}")
-        except Exception as e:
-            print(f"  ✗ Conversion LM PDF échouée : {e}")
-
-    # 4. Sauvegarder les données JSON (pour relecture/debug)
+    # Sauvegarder les données JSON
     json_path = output_dir / f"data_{slug}.json"
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "job": job,
-            "optimized_cv": optimized,
-            "cover_letter": letter,
-        }, f, ensure_ascii=False, indent=2)
+        json.dump({"job": job, "optimized_cv": optimized, "cover_letter": letter},
+                  f, ensure_ascii=False, indent=2)
 
-    print(f"  ✓ Terminé : {slug}")
+    return cv_docx, cv_pdf, lm_docx
+
+
+def process_job_linkedin(
+    job: dict,
+    cv_data: dict,
+    client: anthropic.Anthropic,
+    output_dir: Path,
+    driver,
+    gmail_address: str,
+    gmail_app_password: str,
+    notify_email: str,
+):
+    """
+    Traite une offre LinkedIn :
+    - Easy Apply → postule automatiquement + mail de confirmation
+    - Non Easy Apply → génère CV+LM + mail de notification avec pièces jointes
+    """
+    from applicator.easy_apply import apply_easy_apply
+
+    title = job['title']
+    company = job['company']
+    print(f"\n{'='*60}")
+    print(f"  {title} — {company}")
+    print(f"  Easy Apply : {'OUI' if job['easy_apply'] else 'NON'}")
+    print(f"{'='*60}")
+
+    print("  → Génération CV + LM...")
+    try:
+        cv_docx, cv_pdf, lm_docx = generate_docs(job, cv_data, client, output_dir)
+    except Exception as e:
+        logger.error(f"  Erreur génération docs : {e}")
+        return
+
+    if job["easy_apply"]:
+        print("  → Candidature Easy Apply en cours...")
+        success = apply_easy_apply(driver, job["url"], cv_data, cv_pdf)
+        if success:
+            print(f"  ✓ Candidature soumise !")
+            if gmail_address and gmail_app_password:
+                send_applied_confirmation(gmail_address, gmail_app_password, notify_email, job)
+                print(f"  ✓ Mail de confirmation envoyé à {notify_email}")
+        else:
+            print("  ✗ Easy Apply échoué — envoi du mail de notification à la place.")
+            if gmail_address and gmail_app_password:
+                send_offer_notification(gmail_address, gmail_app_password, notify_email, job, cv_docx, lm_docx)
+                print(f"  ✓ Mail de notification envoyé à {notify_email}")
+    else:
+        print("  → Pas de Easy Apply — envoi du mail de notification...")
+        if gmail_address and gmail_app_password:
+            send_offer_notification(gmail_address, gmail_app_password, notify_email, job, cv_docx, lm_docx)
+            print(f"  ✓ Mail envoyé à {notify_email} avec CV + LM en pièces jointes")
+        else:
+            print(f"  ℹ Fichiers générés dans {output_dir} (mail non configuré)")
+
+
+def process_job_classic(job: dict, cv_data: dict, client: anthropic.Anthropic, output_dir: Path):
+    """Traite une offre Indeed/HelloWork (génération uniquement, sans auto-apply)."""
+    slug = slugify(f"{job['title']}_{job['company']}")
+    print(f"\n{'='*60}")
+    print(f"  {job['title']} — {job['company']}")
+    print(f"  Source : {job['source']} | Lieu : {job.get('location', 'N/A')}")
+    print(f"{'='*60}")
+
+    try:
+        cv_docx, cv_pdf, lm_docx = generate_docs(job, cv_data, client, output_dir)
+        print(f"  ✓ CV : {cv_docx}")
+        print(f"  ✓ LM : {lm_docx}")
+    except Exception as e:
+        logger.error(f"  Erreur : {e}")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Optimise automatiquement ton CV pour des offres de stage en microélectronique / IA embarquée."
+        description="Optimise le CV, postule automatiquement (LinkedIn Easy Apply) et notifie par mail."
     )
     parser.add_argument(
         "--source",
-        choices=["indeed", "hellowork", "all"],
-        default="all",
-        help="Source de scraping (défaut : all)",
+        choices=["linkedin", "indeed", "hellowork", "all"],
+        default="linkedin",
+        help="Source de scraping (défaut : linkedin)",
     )
+    parser.add_argument("--max", type=int, default=10,
+                        help="Nombre max d'offres par source (défaut : 10)")
     parser.add_argument(
-        "--max",
-        type=int,
-        default=10,
-        help="Nombre maximum d'offres à traiter par source (défaut : 10)",
-    )
-    parser.add_argument(
-        "--query",
-        type=str,
+        "--query", type=str,
         default="stage microelectronique IA embarquée intelligence artificielle",
         help="Requête de recherche",
     )
-    parser.add_argument(
-        "--location",
-        type=str,
-        default="France",
-        help="Localisation pour la recherche (défaut : France)",
-    )
-    parser.add_argument(
-        "--cv",
-        type=str,
-        default="cv_data.json",
-        help="Chemin vers le fichier cv_data.json",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="output",
-        help="Dossier de sortie (défaut : output/)",
-    )
+    parser.add_argument("--location", type=str, default="France",
+                        help="Localisation (défaut : France)")
+    parser.add_argument("--cv", type=str, default="cv_data.json",
+                        help="Chemin vers cv_data.json")
+    parser.add_argument("--output", type=str, default="output",
+                        help="Dossier de sortie (défaut : output/)")
+    parser.add_argument("--headless", action="store_true", default=True,
+                        help="Mode headless pour le navigateur (défaut : True)")
     args = parser.parse_args()
 
-    # Vérifications
+    # --- Vérifications ---
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        print("ERREUR : ANTHROPIC_API_KEY manquante. Créer un fichier .env avec la clé.")
+        print("ERREUR : ANTHROPIC_API_KEY manquante dans .env")
         sys.exit(1)
 
     if not Path(args.cv).exists():
         print(f"ERREUR : Fichier CV '{args.cv}' introuvable.")
         sys.exit(1)
 
-    # Préparation
     output_dir = Path(args.output)
     output_dir.mkdir(exist_ok=True)
 
     client = anthropic.Anthropic(api_key=api_key)
     cv_data = load_cv_data(args.cv)
 
-    # Scraping
+    gmail_address = os.getenv("GMAIL_ADDRESS", "")
+    gmail_app_password = os.getenv("GMAIL_APP_PASSWORD", "")
+    notify_email = os.getenv("NOTIFY_EMAIL", gmail_address)
+
     jobs = []
+
+    # --- Scraping LinkedIn ---
+    if args.source in ("linkedin", "all"):
+        linkedin_email = os.getenv("LINKEDIN_EMAIL", "")
+        linkedin_password = os.getenv("LINKEDIN_PASSWORD", "")
+        if not linkedin_email or not linkedin_password:
+            print("ERREUR : LINKEDIN_EMAIL et LINKEDIN_PASSWORD manquants dans .env")
+            sys.exit(1)
+
+        from scrapers.linkedin import scrape_linkedin
+        print(f"\n[Scraping LinkedIn] query='{args.query}' location='{args.location}' max={args.max}")
+        linkedin_jobs = scrape_linkedin(
+            email=linkedin_email,
+            password=linkedin_password,
+            query=args.query,
+            location=args.location,
+            max_jobs=args.max,
+            headless=args.headless,
+        )
+        print(f"[LinkedIn] {len(linkedin_jobs)} offre(s) trouvée(s).")
+
+        if linkedin_jobs:
+            from selenium.webdriver.chrome.options import Options
+            from selenium import webdriver
+            from scrapers.linkedin import _login, _build_driver
+
+            driver = _build_driver(headless=args.headless)
+            _login(driver, linkedin_email, linkedin_password)
+
+            for i, job in enumerate(linkedin_jobs, 1):
+                print(f"\n[LinkedIn {i}/{len(linkedin_jobs)}]")
+                process_job_linkedin(
+                    job, cv_data, client, output_dir,
+                    driver, gmail_address, gmail_app_password, notify_email,
+                )
+            driver.quit()
+
+    # --- Scraping Indeed ---
     if args.source in ("indeed", "all"):
         print(f"\n[Scraping Indeed] query='{args.query}' location='{args.location}' max={args.max}")
-        jobs += scrape_indeed(query=args.query, location=args.location, max_results=args.max)
+        indeed_jobs = scrape_indeed(query=args.query, location=args.location, max_results=args.max)
+        jobs += indeed_jobs
+        print(f"[Indeed] {len(indeed_jobs)} offre(s) trouvée(s).")
 
+    # --- Scraping HelloWork ---
     if args.source in ("hellowork", "all"):
         print(f"\n[Scraping HelloWork] query='{args.query}' location='{args.location}' max={args.max}")
-        jobs += scrape_hellowork(query=args.query, location=args.location, max_results=args.max)
+        hw_jobs = scrape_hellowork(query=args.query, location=args.location, max_results=args.max)
+        jobs += hw_jobs
+        print(f"[HelloWork] {len(hw_jobs)} offre(s) trouvée(s).")
 
-    if not jobs:
-        print("\nAucune offre trouvée. Vérifier la connexion ou les paramètres de recherche.")
-        sys.exit(0)
-
-    print(f"\n{len(jobs)} offre(s) trouvée(s). Début de l'optimisation...")
-
-    # Traitement
+    # --- Traitement Indeed / HelloWork (génération uniquement) ---
     for i, job in enumerate(jobs, 1):
-        print(f"\n[{i}/{len(jobs)}]")
-        process_job(job, cv_data, client, output_dir)
+        print(f"\n[{job['source']} {i}/{len(jobs)}]")
+        process_job_classic(job, cv_data, client, output_dir)
 
     print(f"\n{'='*60}")
-    print(f"Terminé ! {len(jobs)} CV + LM générés dans : {output_dir.resolve()}")
+    print("Terminé !")
     print(f"{'='*60}")
 
 
