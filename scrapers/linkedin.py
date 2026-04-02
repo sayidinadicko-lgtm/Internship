@@ -98,37 +98,84 @@ def _extract_job_details(driver: webdriver.Chrome, wait: WebDriverWait, job_url:
         "source": "linkedin",
     }
 
-    try:
-        details["title"] = driver.find_element(
-            By.CSS_SELECTOR, "h1.job-details-jobs-unified-top-card__job-title, h1.t-24"
-        ).text.strip()
-    except NoSuchElementException:
-        pass
+    # Titre — essayer plusieurs sélecteurs dans l'ordre
+    for selector in [
+        "h1.job-details-jobs-unified-top-card__job-title",
+        "h1.t-24",
+        "h1",
+        ".job-details-jobs-unified-top-card__job-title",
+        "[data-test-job-title]",
+    ]:
+        try:
+            el = driver.find_element(By.CSS_SELECTOR, selector)
+            text = el.text.strip()
+            if text:
+                details["title"] = text
+                break
+        except NoSuchElementException:
+            continue
 
-    try:
-        details["company"] = driver.find_element(
-            By.CSS_SELECTOR,
-            "a.job-details-jobs-unified-top-card__company-name, "
-            ".job-details-jobs-unified-top-card__primary-description a"
-        ).text.strip()
-    except NoSuchElementException:
-        pass
+    # Entreprise
+    for selector in [
+        "a.job-details-jobs-unified-top-card__company-name",
+        ".job-details-jobs-unified-top-card__primary-description a",
+        ".jobs-unified-top-card__company-name a",
+        ".jobs-unified-top-card__company-name",
+        "[data-test-employer-name]",
+    ]:
+        try:
+            el = driver.find_element(By.CSS_SELECTOR, selector)
+            text = el.text.strip()
+            if text:
+                details["company"] = text
+                break
+        except NoSuchElementException:
+            continue
 
-    try:
-        details["location"] = driver.find_element(
-            By.CSS_SELECTOR,
-            ".job-details-jobs-unified-top-card__primary-description .tvm__text"
-        ).text.strip()
-    except NoSuchElementException:
-        pass
+    # Localisation
+    for selector in [
+        ".job-details-jobs-unified-top-card__primary-description .tvm__text",
+        ".jobs-unified-top-card__bullet",
+        ".jobs-unified-top-card__workplace-type",
+        "[data-test-job-location]",
+    ]:
+        try:
+            el = driver.find_element(By.CSS_SELECTOR, selector)
+            text = el.text.strip()
+            if text:
+                details["location"] = text
+                break
+        except NoSuchElementException:
+            continue
 
-    try:
-        desc_el = driver.find_element(
-            By.CSS_SELECTOR, "#job-details, .jobs-description__content"
-        )
-        details["description"] = desc_el.text.strip()[:3000]
-    except NoSuchElementException:
-        pass
+    # Description
+    for selector in [
+        "#job-details",
+        ".jobs-description__content",
+        ".jobs-description",
+        ".job-details-jobs-unified-top-card__job-insight",
+        "article",
+    ]:
+        try:
+            el = driver.find_element(By.CSS_SELECTOR, selector)
+            text = el.text.strip()
+            if len(text) > 50:
+                details["description"] = text[:3000]
+                break
+        except NoSuchElementException:
+            continue
+
+    # Si toujours pas de description, prendre le body entier comme fallback
+    if not details["description"]:
+        try:
+            body_text = driver.find_element(By.TAG_NAME, "body").text
+            details["description"] = body_text[:3000]
+        except Exception:
+            pass
+
+    # Si toujours pas de titre, utiliser l'URL comme fallback
+    if not details["title"]:
+        details["title"] = f"Offre LinkedIn {job_url.split('/')[-2]}"
 
     # Détecter Easy Apply
     try:
