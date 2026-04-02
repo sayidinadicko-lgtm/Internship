@@ -150,20 +150,37 @@ def apply_easy_apply(
     Le driver doit déjà être connecté à LinkedIn.
     Retourne True si la candidature a été soumise avec succès.
     """
-    wait = WebDriverWait(driver, 15)
+    wait = WebDriverWait(driver, 20)
 
     try:
         driver.get(job_url)
-        _human_delay(2, 4)
+        _human_delay(3, 5)
 
-        # Cliquer sur le bouton Easy Apply
-        apply_btn = wait.until(EC.element_to_be_clickable((
-            By.CSS_SELECTOR,
-            "button.jobs-apply-button, "
-            "button[aria-label*='Easy Apply'], "
-            "button[aria-label*='Candidature simplifiée'], "
-            "button[aria-label*='easy apply']"
-        )))
+        # Cliquer sur le bouton Easy Apply — cherche par texte dans tous les boutons
+        apply_btn = None
+        for attempt in range(3):
+            buttons = driver.find_elements(By.TAG_NAME, "button")
+            for btn in buttons:
+                try:
+                    txt = (btn.text or "").lower()
+                    aria = (btn.get_attribute("aria-label") or "").lower()
+                    if any(w in txt or w in aria for w in [
+                        "easy apply", "candidature simplifiée", "postuler maintenant"
+                    ]):
+                        apply_btn = btn
+                        break
+                except Exception:
+                    continue
+            if apply_btn:
+                break
+            _human_delay(2, 3)
+
+        if not apply_btn:
+            logger.warning(f"[EasyApply] Bouton Easy Apply non trouvé pour {job_url}")
+            return False
+
+        driver.execute_script("arguments[0].scrollIntoView(true);", apply_btn)
+        _human_delay(0.5, 1)
         driver.execute_script("arguments[0].click();", apply_btn)
         logger.info(f"[EasyApply] Formulaire ouvert pour {job_url}")
         _human_delay(2, 3)
@@ -173,53 +190,41 @@ def apply_easy_apply(
             _handle_form_step(driver, wait, cv_data, cv_pdf_path)
             _human_delay(1, 2)
 
-            # Chercher bouton "Suivant" / "Next" / "Continuer"
-            next_btn = None
-            for selector in [
-                "button[aria-label='Continuer pour postuler']",
-                "button[aria-label='Continue to next step']",
-                "button[aria-label='Next']",
-                "button[aria-label='Suivant']",
-                "button.artdeco-button--primary span",
-            ]:
-                try:
-                    btns = driver.find_elements(By.CSS_SELECTOR, selector)
-                    for btn in btns:
-                        txt = btn.text.lower()
-                        if any(w in txt for w in ["suivant", "next", "continuer", "continue"]):
-                            next_btn = btn
-                            break
-                    if next_btn:
-                        break
-                except Exception:
-                    continue
-
-            # Chercher bouton "Soumettre" / "Submit"
+            # Chercher tous les boutons visibles et cliquables
             submit_btn = None
-            for selector in [
-                "button[aria-label='Soumettre une candidature']",
-                "button[aria-label='Submit application']",
-                "button[aria-label='Submit']",
-            ]:
-                try:
-                    btns = driver.find_elements(By.CSS_SELECTOR, selector)
-                    for btn in btns:
-                        txt = btn.text.lower()
-                        if any(w in txt for w in ["soumettre", "submit", "envoyer", "send"]):
+            next_btn = None
+
+            try:
+                all_buttons = driver.find_elements(By.TAG_NAME, "button")
+                for btn in all_buttons:
+                    try:
+                        if not btn.is_displayed() or not btn.is_enabled():
+                            continue
+                        txt = (btn.text or "").lower().strip()
+                        aria = (btn.get_attribute("aria-label") or "").lower()
+                        combined = txt + " " + aria
+                        if any(w in combined for w in ["soumettre", "submit", "envoyer", "send"]):
                             submit_btn = btn
                             break
-                    if submit_btn:
-                        break
-                except Exception:
-                    continue
+                        if any(w in combined for w in ["suivant", "next", "continuer", "continue", "vérifier"]):
+                            next_btn = btn
+                    except Exception:
+                        continue
+            except Exception:
+                pass
 
             if submit_btn:
+                driver.execute_script("arguments[0].scrollIntoView(true);", submit_btn)
+                _human_delay(0.5, 1)
                 driver.execute_script("arguments[0].click();", submit_btn)
                 _human_delay(2, 3)
                 logger.info("[EasyApply] Candidature soumise avec succès.")
-                # Fermer la modale de confirmation
                 try:
-                    close_btn = driver.find_element(By.CSS_SELECTOR, "button[aria-label='Fermer'], button[aria-label='Close']")
+                    close_btn = driver.find_element(
+                        By.CSS_SELECTOR,
+                        "button[aria-label='Fermer'], button[aria-label='Close'], "
+                        "button[aria-label='Dismiss']"
+                    )
                     driver.execute_script("arguments[0].click();", close_btn)
                 except Exception:
                     pass
