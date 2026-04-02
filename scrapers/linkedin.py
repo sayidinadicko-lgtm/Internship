@@ -195,17 +195,19 @@ def _extract_job_details(driver: webdriver.Chrome, wait: WebDriverWait, job_url:
         except Exception:
             pass
 
-    # Détecter Easy Apply — chercher le bouton par texte ET aria-label
-    details["easy_apply"] = False
+    # Easy Apply — LinkedIn filtre déjà avec f_AL=true dans l'URL de recherche
+    # Toutes les offres retournées sont donc Easy Apply par définition.
+    # On essaie quand même de confirmer via le bouton, mais on défaut à True.
+    details["easy_apply"] = True
     try:
         buttons = driver.find_elements(By.TAG_NAME, "button")
         for btn in buttons:
             try:
                 btn_text = (btn.text or "").lower()
                 aria = (btn.get_attribute("aria-label") or "").lower()
-                if ("easy apply" in btn_text or "candidature simplifiée" in btn_text
-                        or "easy apply" in aria or "candidature simplifiée" in aria):
-                    details["easy_apply"] = True
+                # Si on trouve explicitement un bouton "Postuler" non-Easy Apply, on corrige
+                if "postuler sur le site" in btn_text or "apply on company" in aria:
+                    details["easy_apply"] = False
                     break
             except Exception:
                 continue
