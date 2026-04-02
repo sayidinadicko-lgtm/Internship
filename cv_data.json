@@ -1,79 +1,121 @@
 {
   "personal_info": {
-    "first_name": "PRENOM",
-    "last_name": "NOM",
-    "email": "prenom.nom@example.com",
-    "phone": "+33 6 XX XX XX XX",
-    "linkedin": "linkedin.com/in/profil",
-    "github": "github.com/profil"
+    "first_name": "Sayidina",
+    "last_name": "DICKO",
+    "email": "sayidina.dicko@etu.univ-amu.fr",
+    "phone": "+33 6 25 85 95 82",
+    "linkedin": "",
+    "github": ""
   },
   "education": [
     {
       "degree": "Baccalauréat Scientifique",
-      "school": "Lycée [Nom], Fatick, Sénégal",
-      "year": "2020",
+      "school": "Lycée KND, Sénégal",
+      "year": "sept. 2019 – juil. 2020",
       "mention": ""
     },
     {
-      "degree": "CPGE PT (Physique et Technologie)",
-      "school": "Classe Préparatoire aux Grandes Écoles, Lille",
-      "year": "2020 – 2022",
+      "degree": "CPGE – Prépa PTSI",
+      "school": "Lycée Baggio, Lille",
+      "year": "sept. 2020 – juil. 2022",
       "mention": ""
     },
     {
-      "degree": "Cycle Ingénieur – Spécialité Microélectronique",
+      "degree": "Cycle Ingénieur – Microélectronique et Télécommunications",
       "school": "Polytech Marseille, Aix-Marseille Université",
-      "year": "2022 – 2025",
-      "mention": "5ème année (dernière année)"
+      "year": "sept. 2023 – aujourd'hui",
+      "mention": "5ème année (stage de fin d'études – 6 mois)"
     }
   ],
   "skills": {
-    "hardware_design": ["VHDL", "Verilog", "SystemVerilog", "FPGA", "Vivado", "Quartus", "Conception ASIC"],
-    "embedded_ai": ["TensorFlow Lite", "Edge Impulse", "Quantification de modèles", "Pruning", "TinyML", "ONNX"],
-    "programming": ["C", "C++", "Python", "MATLAB", "Assembly ARM"],
-    "embedded_systems": ["STM32", "Arduino", "Raspberry Pi", "ESP32", "protocoles UART/SPI/I2C/CAN"],
-    "ai_ml": ["TensorFlow", "PyTorch", "scikit-learn", "Réseaux de neurones CNN/RNN", "traitement du signal"],
-    "tools": ["Git", "Linux", "Makefile", "Keil MDK", "STM32CubeIDE", "LTSpice", "Cadence"],
-    "other": ["LaTeX", "Microsoft Office"]
+    "programming": ["C", "C++", "Python"],
+    "embedded_ai": [
+      "IA embarquée / Reconnaissance d'images",
+      "Projet NPU sur carte DBX Modèle A",
+      "Classification d'images (CNN)",
+      "TensorFlow Lite",
+      "TinyML"
+    ],
+    "embedded_systems": [
+      "Systèmes embarqués",
+      "Microcontrôleurs NXP CUP",
+      "S32K144-Q100",
+      "UART / SPI / I2C / CAN"
+    ],
+    "hardware_design": [
+      "VHDL", "Verilog",
+      "Conception numérique (simulation, synthèse, validation)",
+      "Flot complet VLSI (RTL → simulation → synthèse → P&R → layout → timing analysis)",
+      "Conception ASIC",
+      "Conception de layouts (DRC, LVS)",
+      "Placement et routage avec Cadence Innovus",
+      "Conception de circuits intégrés analogiques – Cadence Virtuoso"
+    ],
+    "simulation": [
+      "Simulation analogique avancée (AC/DC, Transient, Noise, stabilité, THD, corner, Monte Carlo)",
+      "TCAD Sentaurus"
+    ],
+    "tools": ["Cadence", "Cadence Innovus", "Cadence Virtuoso", "TCAD Sentaurus", "SolidWorks"]
   },
   "projects": [
     {
-      "title": "Implémentation d'un réseau de neurones sur FPGA",
-      "description": "Conception et implémentation d'un CNN léger pour la classification d'images sur cible FPGA Xilinx, avec optimisation mémoire et pipeline de traitement.",
-      "technologies": ["VHDL", "Python", "TensorFlow Lite", "Vivado"],
+      "title": "IA embarquée – Reconnaissance d'images sur carte DBX Modèle A (NPU intégré)",
+      "description": "Développement d'un système de classification d'images en temps réel sur une carte intégrant un NPU. Classification 3 classes : avion, bateau, voiture. Implémentation et optimisation du modèle CNN pour l'inférence embarquée.",
+      "technologies": ["Python", "C", "NPU", "IA embarquée", "Classification d'images"],
       "year": "2024"
     },
     {
-      "title": "Système de détection de gestes embarqué",
-      "description": "Développement d'un système embarqué sur STM32 intégrant un modèle TinyML pour la reconnaissance de gestes en temps réel via capteur IMU.",
-      "technologies": ["C", "STM32", "Edge Impulse", "TensorFlow Lite"],
-      "year": "2024"
+      "title": "NXP CUP – Optimisation de l'algorithme de la caméra Pixy2",
+      "description": "Optimisation de l'algorithme de traitement d'image de la caméra Pixy2 pour le pilotage autonome d'un véhicule NXP CUP. Développement sur microcontrôleur S32K144-Q100 avec contraintes temps réel.",
+      "technologies": ["C", "S32K144-Q100", "NXP CUP", "Traitement d'image", "Embarqué"],
+      "year": "2024 – en cours"
     },
     {
-      "title": "Conception d'un processeur RISC-V simplifié",
-      "description": "Implémentation d'un cœur RISC-V 32 bits (pipeline 5 étages) en VHDL sur FPGA avec gestion des aléas et du cache L1.",
-      "technologies": ["VHDL", "RISC-V", "Vivado", "Assembly"],
+      "title": "Conception d'un microprocesseur RISC 8 bits – Projet puce électronique",
+      "description": "Réalisation en groupe d'une puce électronique intégrant un microprocesseur 8 bits de type RISC. Conception de circuits intégrés numériques et programmation microcontrôleurs, en suivant le flot complet VLSI.",
+      "technologies": ["VHDL", "Cadence", "VLSI", "Conception numérique"],
       "year": "2023"
     }
   ],
   "experience": [
     {
-      "title": "Stage – [Titre du stage]",
-      "company": "[Entreprise]",
-      "location": "[Ville]",
-      "period": "[Mois Année – Mois Année]",
-      "description": "[Description des missions effectuées]"
+      "title": "Réparateur d'appareils électroniques",
+      "company": "BFK Net Provence",
+      "location": "Marseille",
+      "period": "juil. 2025 – sept. 2025",
+      "description": "Diagnostic et réparation d'appareils électroniques (téléphones, ordinateurs, équipements divers). Identification des pannes matérielles et logicielles."
+    },
+    {
+      "title": "Stage – Fabrication de cellules photovoltaïques",
+      "company": "AIME",
+      "location": "Toulouse",
+      "period": "",
+      "description": "Accompagnement à la fabrication de cellules photovoltaïques en salle blanche. Découverte des procédés de microélectronique (dépôt, gravure, caractérisation)."
+    },
+    {
+      "title": "Professeur particulier",
+      "company": "Méthodik",
+      "location": "Paris",
+      "period": "oct. 2022 – juil. 2023",
+      "description": "Enseignement de matières scientifiques (mathématiques, physique) à des lycéens et étudiants en prépa."
+    },
+    {
+      "title": "Serveur / Barman",
+      "company": "Rodizio Brazil",
+      "location": "Marseille",
+      "period": "déc. 2023 – aujourd'hui",
+      "description": "Service en salle et gestion du bar."
     }
   ],
   "languages": [
-    {"language": "Français", "level": "Courant (C1)"},
+    {"language": "Français", "level": "Courant"},
     {"language": "Anglais", "level": "Intermédiaire (B2)"},
     {"language": "Wolof", "level": "Langue maternelle"}
   ],
   "interests": [
-    "Intelligence artificielle et systèmes embarqués",
-    "Robotique",
-    "Électronique DIY",
-    "Football"
+    "Intelligence artificielle embarquée",
+    "Microélectronique et conception VLSI",
+    "Robotique et systèmes autonomes",
+    "Électronique DIY"
   ]
 }
