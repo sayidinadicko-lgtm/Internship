@@ -189,7 +189,7 @@ def main():
 
         from scrapers.linkedin import scrape_linkedin
         print(f"\n[Scraping LinkedIn] query='{args.query}' location='{args.location}' max={args.max}")
-        linkedin_jobs = scrape_linkedin(
+        linkedin_jobs, driver = scrape_linkedin(
             email=linkedin_email,
             password=linkedin_password,
             query=args.query,
@@ -199,12 +199,7 @@ def main():
         )
         print(f"[LinkedIn] {len(linkedin_jobs)} offre(s) trouvée(s).")
 
-        if linkedin_jobs:
-            from scrapers.linkedin import _login, _build_driver
-
-            driver = _build_driver(headless=args.headless)
-            _login(driver, linkedin_email, linkedin_password)
-
+        if linkedin_jobs and driver:
             applied_jobs = []
             for i, job in enumerate(linkedin_jobs, 1):
                 print(f"\n[LinkedIn {i}/{len(linkedin_jobs)}]")

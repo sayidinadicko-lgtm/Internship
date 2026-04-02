@@ -224,12 +224,11 @@ def scrape_linkedin(
     location: str = "France",
     max_jobs: int = 10,
     headless: bool = True,
-) -> list[dict]:
+) -> tuple[list[dict], object]:
     """
-    Se connecte à LinkedIn, cherche des offres de stage et retourne la liste.
-
-    Chaque offre contient :
-      title, company, location, description, easy_apply, url, source
+    Se connecte à LinkedIn, cherche des offres de stage Easy Apply.
+    Retourne (jobs, driver) — le driver reste ouvert pour la phase d'apply.
+    Appeler driver.quit() après avoir terminé les candidatures.
     """
     driver = _build_driver(headless=headless)
     wait = WebDriverWait(driver, 15)
@@ -237,11 +236,11 @@ def scrape_linkedin(
 
     try:
         if not _login(driver, email, password):
-            return []
+            driver.quit()
+            return [], None
 
         _human_delay(2, 4)
 
-        # Construire l'URL de recherche LinkedIn Jobs
         import urllib.parse
         encoded_query = urllib.parse.quote(query)
         encoded_location = urllib.parse.quote(location)
@@ -249,10 +248,10 @@ def scrape_linkedin(
             f"https://www.linkedin.com/jobs/search/"
             f"?keywords={encoded_query}"
             f"&location={encoded_location}"
-            f"&f_JT=I"          # I = Internship
-            f"&f_AL=true"       # Easy Apply uniquement
-            f"&f_TPR=r2592000"  # 30 derniers jours
-            f"&sortBy=R"        # Pertinence
+            f"&f_JT=I"
+            f"&f_AL=true"
+            f"&f_TPR=r2592000"
+            f"&sortBy=R"
         )
 
         logger.info(f"[LinkedIn] Recherche : {query} | {location}")
@@ -306,7 +305,8 @@ def scrape_linkedin(
 
     except Exception as e:
         logger.error(f"[LinkedIn] Erreur : {e}")
-    finally:
         driver.quit()
+        return [], None
 
-    return jobs
+    # NE PAS quitter le driver — il sera réutilisé pour les candidatures
+    return jobs, driver
