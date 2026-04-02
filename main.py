@@ -153,8 +153,8 @@ def main():
                         help="Chemin vers cv_data.json")
     parser.add_argument("--output", type=str, default="output",
                         help="Dossier de sortie (défaut : output/)")
-    parser.add_argument("--headless", action="store_true", default=True,
-                        help="Mode headless pour le navigateur (défaut : True)")
+    parser.add_argument("--headless", action="store_true", default=False,
+                        help="Mode headless pour le navigateur (défaut : False = fenêtre visible)")
     args = parser.parse_args()
 
     # --- Vérifications ---
