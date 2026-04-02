@@ -98,6 +98,13 @@ def _extract_job_details(driver: webdriver.Chrome, wait: WebDriverWait, job_url:
         "source": "linkedin",
     }
 
+    # Attendre que le contenu JavaScript soit chargé
+    try:
+        wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
+    except TimeoutException:
+        pass
+    _human_delay(2, 3)
+
     # Titre — essayer plusieurs sélecteurs dans l'ordre
     for selector in [
         "h1.job-details-jobs-unified-top-card__job-title",
@@ -176,6 +183,17 @@ def _extract_job_details(driver: webdriver.Chrome, wait: WebDriverWait, job_url:
     # Si toujours pas de titre, utiliser l'URL comme fallback
     if not details["title"]:
         details["title"] = f"Offre LinkedIn {job_url.split('/')[-2]}"
+
+    # Si toujours pas d'entreprise, essayer via le titre de la page
+    if not details["company"]:
+        try:
+            page_title = driver.title  # ex: "Ingénieur IA | STMicroelectronics | LinkedIn"
+            parts = [p.strip() for p in page_title.split("|")]
+            if len(parts) >= 2:
+                details["title"] = details["title"] or parts[0]
+                details["company"] = parts[1] if parts[1].lower() != "linkedin" else ""
+        except Exception:
+            pass
 
     # Détecter Easy Apply
     try:
