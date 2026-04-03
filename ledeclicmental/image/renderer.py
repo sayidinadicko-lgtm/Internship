@@ -26,7 +26,7 @@ from ledeclicmental.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-W, H = 1080, 1080
+W, H = 1080, 1350  # format 4:5 Instagram portrait
 BG_COLOR = (0, 0, 0)          # noir pur
 TEXT_COLOR = (255, 255, 255)   # blanc
 HANDLE_COLOR = (200, 200, 200) # gris clair pour le handle
@@ -88,17 +88,17 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
     img = Image.new("RGB", (W, H), BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    # ── Polices ───────────────────────────────────────────────────────────────
-    font_quote  = _load_font("Montserrat-Bold.ttf", 62)
-    font_open   = _load_font("Montserrat-Bold.ttf", 110)  # guillemet " ouvrant
-    font_handle = _load_font("Montserrat-Bold.ttf", 28)
+    # ── Polices (Bebas Neue en priorité, fallback système) ───────────────────
+    font_quote  = _load_font("BebasNeue-Regular.ttf", 90)
+    font_open   = _load_font("BebasNeue-Regular.ttf", 140)
+    font_handle = _load_font("BebasNeue-Regular.ttf", 36)
 
     # ── Préparer les lignes de la citation ────────────────────────────────────
-    lines = _wrap_text(quote, max_chars=20)
+    lines = _wrap_text(quote, max_chars=18)
 
-    # Zone de texte : de y=180 à y=820 (laisse de la place pour logo en bas)
-    text_zone_top    = 180
-    text_zone_bottom = 820
+    # Zone de texte : adaptée au format 4:5 (1080x1350)
+    text_zone_top    = 220
+    text_zone_bottom = 1020
     text_zone_h      = text_zone_bottom - text_zone_top
     line_spacing     = 18
 
@@ -143,7 +143,7 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
             logo_size = 160
             logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
             logo_x = (W - logo_size) // 2
-            logo_y = H - logo_size - 40
+            logo_y = H - logo_size - 80
             img.paste(logo, (logo_x, logo_y), logo)
         except Exception as exc:
             logger.warning("Impossible de coller le logo : %s", exc)
