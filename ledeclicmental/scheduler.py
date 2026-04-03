@@ -22,7 +22,7 @@ _SLOT_NAMES = ["morning", "midday", "evening"]
 
 def run_post_job(slot: str) -> None:
     """Full pipeline for one post. Wrapped in broad try/except so scheduler stays alive."""
-    logger.info("═══ Starting post job — slot=%s ═══", slot)
+    logger.info(">>> Starting post job — slot=%s <<<", slot)
     try:
         from ledeclicmental.topics.trending import get_daily_topic
         from ledeclicmental.content.generator import generate_post
@@ -57,7 +57,7 @@ def run_post_job(slot: str) -> None:
             media_id=media_id,
         )
 
-        logger.info("═══ Job complete — slot=%s  media_id=%s ═══", slot, media_id)
+        logger.info(">>> Job complete — slot=%s  media_id=%s <<<", slot, media_id)
 
     except Exception as exc:
         logger.exception("Job failed for slot=%s: %s", slot, exc)
