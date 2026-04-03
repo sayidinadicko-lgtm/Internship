@@ -40,14 +40,14 @@ def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.Image
                 return ImageFont.truetype(str(candidate), size)
             except OSError:
                 pass
-    # Fallback système (Windows + Linux + Mac)
+    # Fallback système — Copperplate en priorité
     system_fonts = [
-        "C:\\Windows\\Fonts\\arialbd.ttf",          # Windows Arial Bold
-        "C:\\Windows\\Fonts\\Arial Bold.ttf",
-        "C:\\Windows\\Fonts\\calibrib.ttf",          # Windows Calibri Bold
+        "C:\\Windows\\Fonts\\COPRGTB.TTF",           # Copperplate Gothic Bold (Windows)
+        "C:\\Windows\\Fonts\\COPRGTL.TTF",           # Copperplate Gothic Light (Windows)
+        "/Library/Fonts/Copperplate.ttc",            # macOS
+        "/System/Library/Fonts/Copperplate.ttc",     # macOS système
+        "C:\\Windows\\Fonts\\arialbd.ttf",           # fallback Arial Bold
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
     ]
     for sf in system_fonts:
         if Path(sf).exists():
@@ -88,10 +88,10 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
     img = Image.new("RGB", (W, H), BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    # ── Polices (Bebas Neue en priorité, fallback système) ───────────────────
-    font_quote  = _load_font("BebasNeue-Regular.ttf", 90)
-    font_open   = _load_font("BebasNeue-Regular.ttf", 140)
-    font_handle = _load_font("BebasNeue-Regular.ttf", 36)
+    # ── Polices (Copperplate Gothic Bold) ────────────────────────────────────
+    font_quote  = _load_font("COPRGTB.TTF", 85)
+    font_open   = _load_font("COPRGTB.TTF", 130)
+    font_handle = _load_font("COPRGTB.TTF", 34)
 
     # ── Préparer les lignes de la citation ────────────────────────────────────
     lines = _wrap_text(quote, max_chars=18)
