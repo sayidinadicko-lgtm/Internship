@@ -36,7 +36,7 @@ def _build_caption(content: PostContent, audio: AudioTrack) -> str:
     Structure :
       [Légende FR + CTA FR]
 
-      ──────────────
+      - - -
 
       [Légende EN + CTA EN]
 
@@ -44,8 +44,6 @@ def _build_caption(content: PostContent, audio: AudioTrack) -> str:
       .
       .
       [30 hashtags]
-
-      [Mention audio FR / EN]
     """
     fr_block = f"{content.caption_fr}\n\n{content.cta_fr}"
     en_block = f"{content.caption_en}\n\n{content.cta_en}"
@@ -53,15 +51,12 @@ def _build_caption(content: PostContent, audio: AudioTrack) -> str:
     tags = get_hashtags(content.topic.keyword_fr, content.slot)
     hashtag_line = format_hashtags(tags)
 
-    audio_line = f"{audio.caption_mention_fr}\n{audio.caption_mention_en}"
-
     return (
         f"{fr_block}\n\n"
-        f"──────────────\n\n"
+        f"- - -\n\n"
         f"{en_block}\n\n"
         f".\n.\n.\n\n"
-        f"{hashtag_line}\n\n"
-        f"{audio_line}"
+        f"{hashtag_line}"
     )
 
 
@@ -93,9 +88,45 @@ def _get_client():
     return cl
 
 
+def _post_story(cl, image_path: Path, content: PostContent) -> None:
+    """
+    Publie la slide FR en Story juste après le carousel.
+    Non bloquant : un échec ici ne stoppe pas le pipeline.
+    """
+    try:
+        delay = random.uniform(10, 25)
+        logger.info("Story : attente %.0fs avant publication…", delay)
+        time.sleep(delay)
+        cl.photo_upload_to_story(path=str(image_path))
+        logger.info("Story publiée avec succès.")
+    except Exception as exc:
+        logger.warning("Story non publiée (non bloquant) : %s", exc)
+
+
+def _post_first_comment(cl, media_id: str, content: PostContent) -> None:
+    """
+    Poste un premier commentaire pour stimuler l'engagement.
+    Posté 15-30s après la publication pour paraître organique.
+    """
+    try:
+        delay = random.uniform(15, 30)
+        logger.info("Commentaire : attente %.0fs…", delay)
+        time.sleep(delay)
+        comment = (
+            f"Swipe pour lire la version EN >> "
+            f"Slide to read the FR version \u2764\ufe0f\u200d\U0001f525 "
+            f"| Sauvegarde ce post si \u00e7a t\u2019a parl\u00e9 ! "
+            f"Save this if it resonated with you!"
+        )
+        cl.media_comment(media_id, comment)
+        logger.info("Premier commentaire post\u00e9.")
+    except Exception as exc:
+        logger.warning("Commentaire non post\u00e9 (non bloquant) : %s", exc)
+
+
 def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack) -> str:
     """
-    Publie un carousel (album) sur Instagram.
+    Publie un carousel (album) sur Instagram, puis une Story + premier commentaire.
 
     image_paths : [slide_fr.jpg, slide_en.jpg]
     Retourne le media_id (chaîne vide en mode DRY_RUN).
@@ -130,6 +161,13 @@ def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack
                 )
             media_id = str(media.id)
             logger.info("Publié avec succès — media_id=%s", media_id)
+
+            # Story automatique (slide FR)
+            _post_story(cl, image_paths[0], content)
+
+            # Premier commentaire
+            _post_first_comment(cl, media_id, content)
+
             return media_id
 
         except Exception as exc:
