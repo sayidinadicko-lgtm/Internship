@@ -61,7 +61,7 @@ def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.Image
 
 def _wrap_text(text: str, max_chars: int) -> list[str]:
     """Découpe le texte en lignes sans couper les mots."""
-    return textwrap.wrap(text.upper(), width=max_chars)
+    return textwrap.wrap(text, width=max_chars)
 
 
 def _total_text_height(
@@ -88,18 +88,16 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
     img = Image.new("RGB", (W, H), BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    MARGIN = 90          # marge gauche/droite
-    MAX_W  = W - MARGIN * 2  # largeur max du texte = 900px
+    MARGIN   = 75                  # marge gauche
+    MAX_W    = W - MARGIN - 60     # largeur max = 945px
 
-    # ── Police — taille auto pour que le texte rentre dans MAX_W ─────────────
-    font_handle = _load_font("COPRGTB.TTF", 32)
-    font_open   = _load_font("COPRGTB.TTF", 100)
+    font_handle = _load_font("COPRGTB.TTF", 30)
 
-    # Cherche la taille idéale : part de 80, réduit jusqu'à ce que ça rentre
-    font_size = 80
-    while font_size > 30:
+    # ── Taille de police auto (part de 72, réduit jusqu'à ce que ça rentre) ──
+    font_size = 72
+    while font_size > 28:
         font_quote = _load_font("COPRGTB.TTF", font_size)
-        lines = _wrap_text(quote, max_chars=16)
+        lines = _wrap_text(quote, max_chars=22)
         max_line_w = max(
             draw.textbbox((0, 0), l, font=font_quote)[2] -
             draw.textbbox((0, 0), l, font=font_quote)[0]
@@ -107,54 +105,44 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
         )
         if max_line_w <= MAX_W:
             break
-        font_size -= 4
+        font_size -= 3
 
-    line_spacing = int(font_size * 0.22)
+    line_spacing = int(font_size * 0.28)
 
-    # ── Zone de texte centrée verticalement (haut=250, bas=1050) ─────────────
-    text_zone_top    = 250
-    text_zone_bottom = 1050
-    text_zone_h      = text_zone_bottom - text_zone_top
+    # ── Guillemet inline (même taille que la citation) ────────────────────────
+    open_quote   = "\u201c"   # "
+    close_quote  = "\u201d"   # "
+    # Ajoute " au début de la première ligne et " à la fin de la dernière
+    lines[0]  = open_quote + lines[0]
+    lines[-1] = lines[-1] + close_quote
 
-    text_h = _total_text_height(draw, lines, font_quote, line_spacing)
-    text_start_y = text_zone_top + (text_zone_h - text_h) // 2
+    # ── Bloc texte positionné dans la moitié basse (y_start ≈ 40% de H) ──────
+    text_h       = _total_text_height(draw, lines, font_quote, line_spacing)
+    text_start_y = int(H * 0.38)   # commence à 38% de la hauteur
 
-    # ── Guillemet " — au-dessus du bloc texte, aligné à gauche ───────────────
-    open_quote = "\u201c"
-    oq_bbox = draw.textbbox((0, 0), open_quote, font=font_open)
-    oq_h = oq_bbox[3] - oq_bbox[1]
-    draw.text(
-        (MARGIN, text_start_y - oq_h - 10),
-        open_quote,
-        font=font_open,
-        fill=TEXT_COLOR,
-    )
-
-    # ── Citation (centré dans MAX_W) ──────────────────────────────────────────
+    # ── Dessin des lignes — aligné à gauche ───────────────────────────────────
     y = text_start_y
     for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font_quote)
-        line_w = bbox[2] - bbox[0]
+        bbox  = draw.textbbox((0, 0), line, font=font_quote)
         line_h = bbox[3] - bbox[1]
-        x = (W - line_w) // 2
-        draw.text((x, y), line, font=font_quote, fill=TEXT_COLOR)
+        draw.text((MARGIN, y), line, font=font_quote, fill=TEXT_COLOR)
         y += line_h + line_spacing
 
     # ── @LEDECLICMENTAL centré sous la citation ───────────────────────────────
-    handle = "@LEDECLICMENTAL"
-    h_bbox = draw.textbbox((0, 0), handle, font=font_handle)
+    handle  = "@LEDECLICMENTAL"
+    h_bbox  = draw.textbbox((0, 0), handle, font=font_handle)
     handle_w = h_bbox[2] - h_bbox[0]
-    draw.text(((W - handle_w) // 2, y + 35), handle, font=font_handle, fill=HANDLE_COLOR)
+    draw.text(((W - handle_w) // 2, y + 30), handle, font=font_handle, fill=HANDLE_COLOR)
 
-    # ── Logo cerveau centré en bas ────────────────────────────────────────────
+    # ── Logo centré en bas ────────────────────────────────────────────────────
     logo_path: Path = settings.assets_dir / "logo" / "ledeclicmental_logo.png"
     if logo_path.exists():
         try:
-            logo = Image.open(logo_path).convert("RGBA")
+            logo      = Image.open(logo_path).convert("RGBA")
             logo_size = 180
-            logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
-            logo_x = (W - logo_size) // 2
-            logo_y = H - logo_size - 70
+            logo      = logo.resize((logo_size, logo_size), Image.LANCZOS)
+            logo_x    = (W - logo_size) // 2
+            logo_y    = H - logo_size - 70
             img.paste(logo, (logo_x, logo_y), logo)
         except Exception as exc:
             logger.warning("Impossible de coller le logo : %s", exc)
