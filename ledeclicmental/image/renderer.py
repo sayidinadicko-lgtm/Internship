@@ -88,36 +88,49 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
     img = Image.new("RGB", (W, H), BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    # ── Polices (Copperplate Gothic Bold) ────────────────────────────────────
-    font_quote  = _load_font("COPRGTB.TTF", 85)
-    font_open   = _load_font("COPRGTB.TTF", 130)
-    font_handle = _load_font("COPRGTB.TTF", 34)
+    MARGIN = 90          # marge gauche/droite
+    MAX_W  = W - MARGIN * 2  # largeur max du texte = 900px
 
-    # ── Préparer les lignes de la citation ────────────────────────────────────
-    lines = _wrap_text(quote, max_chars=18)
+    # ── Police — taille auto pour que le texte rentre dans MAX_W ─────────────
+    font_handle = _load_font("COPRGTB.TTF", 32)
+    font_open   = _load_font("COPRGTB.TTF", 100)
 
-    # Zone de texte : adaptée au format 4:5 (1080x1350)
-    text_zone_top    = 220
-    text_zone_bottom = 1020
+    # Cherche la taille idéale : part de 80, réduit jusqu'à ce que ça rentre
+    font_size = 80
+    while font_size > 30:
+        font_quote = _load_font("COPRGTB.TTF", font_size)
+        lines = _wrap_text(quote, max_chars=16)
+        max_line_w = max(
+            draw.textbbox((0, 0), l, font=font_quote)[2] -
+            draw.textbbox((0, 0), l, font=font_quote)[0]
+            for l in lines
+        )
+        if max_line_w <= MAX_W:
+            break
+        font_size -= 4
+
+    line_spacing = int(font_size * 0.22)
+
+    # ── Zone de texte centrée verticalement (haut=250, bas=1050) ─────────────
+    text_zone_top    = 250
+    text_zone_bottom = 1050
     text_zone_h      = text_zone_bottom - text_zone_top
-    line_spacing     = 18
 
     text_h = _total_text_height(draw, lines, font_quote, line_spacing)
     text_start_y = text_zone_top + (text_zone_h - text_h) // 2
 
-    # ── Grand guillemet " ouvrant (haut gauche du bloc texte) ─────────────────
-    open_quote = "\u201c"   # "
+    # ── Guillemet " — au-dessus du bloc texte, aligné à gauche ───────────────
+    open_quote = "\u201c"
     oq_bbox = draw.textbbox((0, 0), open_quote, font=font_open)
     oq_h = oq_bbox[3] - oq_bbox[1]
-    # Positionné à gauche, légèrement au-dessus du début du texte
     draw.text(
-        (60, text_start_y - oq_h // 2 - 10),
+        (MARGIN, text_start_y - oq_h - 10),
         open_quote,
         font=font_open,
         fill=TEXT_COLOR,
     )
 
-    # ── Citation (centré) ─────────────────────────────────────────────────────
+    # ── Citation (centré dans MAX_W) ──────────────────────────────────────────
     y = text_start_y
     for line in lines:
         bbox = draw.textbbox((0, 0), line, font=font_quote)
@@ -127,23 +140,21 @@ def _draw_slide(quote: str, lang: str, content: PostContent) -> Image.Image:
         draw.text((x, y), line, font=font_quote, fill=TEXT_COLOR)
         y += line_h + line_spacing
 
-    # ── @LEDECLICMENTAL ───────────────────────────────────────────────────────
+    # ── @LEDECLICMENTAL centré sous la citation ───────────────────────────────
     handle = "@LEDECLICMENTAL"
     h_bbox = draw.textbbox((0, 0), handle, font=font_handle)
     handle_w = h_bbox[2] - h_bbox[0]
-    handle_x = (W - handle_w) // 2
-    handle_y = y + 40
-    draw.text((handle_x, handle_y), handle, font=font_handle, fill=HANDLE_COLOR)
+    draw.text(((W - handle_w) // 2, y + 35), handle, font=font_handle, fill=HANDLE_COLOR)
 
-    # ── Logo cerveau (centré en bas) ──────────────────────────────────────────
+    # ── Logo cerveau centré en bas ────────────────────────────────────────────
     logo_path: Path = settings.assets_dir / "logo" / "ledeclicmental_logo.png"
     if logo_path.exists():
         try:
             logo = Image.open(logo_path).convert("RGBA")
-            logo_size = 160
+            logo_size = 180
             logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
             logo_x = (W - logo_size) // 2
-            logo_y = H - logo_size - 80
+            logo_y = H - logo_size - 70
             img.paste(logo, (logo_x, logo_y), logo)
         except Exception as exc:
             logger.warning("Impossible de coller le logo : %s", exc)
