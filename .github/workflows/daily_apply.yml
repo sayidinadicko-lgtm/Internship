@@ -1,4 +1,4 @@
-﻿name: Daily Job Search & Apply
+name: Daily Job Search & Apply
 
 on:
   schedule:
