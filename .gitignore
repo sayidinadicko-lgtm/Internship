@@ -1,8 +1,8 @@
-.env
+﻿.env
+cv_data.json
+output/
+*.pdf
+*.docx
 __pycache__/
 *.pyc
-*.pyo
-output/
-*.egg-info/
-.venv/
-venv/
+.DS_Store
