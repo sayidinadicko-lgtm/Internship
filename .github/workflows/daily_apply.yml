@@ -32,10 +32,10 @@ jobs:
           echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS }}" >> .env
           echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}" >> .env
           echo "NOTIFY_EMAIL=${{ secrets.NOTIFY_EMAIL }}" >> .env
-	  echo "LINKEDIN_COOKIES=${{ secrets.LINKEDIN_COOKIES }}" >> .env
-
 
       - name: Run
+        env:
+          LINKEDIN_COOKIES: ${{ secrets.LINKEDIN_COOKIES }}
         run: |
           python main.py \
             --source linkedin \
