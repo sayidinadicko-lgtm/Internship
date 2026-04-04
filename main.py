@@ -189,13 +189,15 @@ def main():
 
         from scrapers.linkedin import scrape_linkedin
         print(f"\n[Scraping LinkedIn] query='{args.query}' location='{args.location}' max={args.max}")
-        linkedin_jobs, driver = scrape_linkedin(
-            email=linkedin_email,
-            password=linkedin_password,
-            query=args.query,
-            location=args.location,
-            max_jobs=args.max,
-            headless=args.headless,
+        linkedin_cookies = os.getenv("LINKEDIN_COOKIES", "")
+	linkedin_jobs, driver = scrape_linkedin(
+    		cookies_json=linkedin_cookies,
+    		email=linkedin_email,
+    		password=linkedin_password,
+		query=args.query,
+            	location=args.location,
+            	max_jobs=args.max,
+            	headless=args.headless,
         )
         print(f"[LinkedIn] {len(linkedin_jobs)} offre(s) trouvée(s).")
 
