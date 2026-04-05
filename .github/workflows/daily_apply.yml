@@ -38,7 +38,7 @@ jobs:
           LINKEDIN_COOKIES: ${{ secrets.LINKEDIN_COOKIES }}
         run: |
           python main.py \
-            --source linkedin \
+            --source "${{ vars.SOURCE }}" \
             --query "${{ vars.SEARCH_QUERY }}" \
             --location "${{ vars.SEARCH_LOCATION }}" \
             --max ${{ vars.MAX_JOBS }} \
