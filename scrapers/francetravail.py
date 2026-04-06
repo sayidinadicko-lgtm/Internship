@@ -1,6 +1,3 @@
-"""
-Scraper France Travail API (ex-Pole Emploi) - gratuit, officiel, pas de blocage.
-"""
 import requests
 import logging
 
@@ -10,7 +7,7 @@ API_TOKEN_URL = "https://entreprise.francetravail.fr/connexion/oauth2/access_tok
 API_SEARCH_URL = "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search"
 
 
-def _get_token(client_id: str, client_secret: str) -> str:
+def _get_token(client_id, client_secret):
     resp = requests.post(API_TOKEN_URL, data={
         "grant_type": "client_credentials",
         "client_id": client_id,
@@ -21,13 +18,7 @@ def _get_token(client_id: str, client_secret: str) -> str:
     return resp.json()["access_token"]
 
 
-def scrape_francetravail(
-    client_id: str,
-    client_secret: str,
-    query: str = "stage microelectronique",
-    location: str = "",
-    max_results: int = 10,
-) -> list[dict]:
+def scrape_francetravail(client_id, client_secret, query="stage microelectronique", location="", max_results=10):
     try:
         token = _get_token(client_id, client_secret)
         headers = {"Authorization": f"Bearer {token}"}
@@ -35,7 +26,14 @@ def scrape_francetravail(
             "motsCles": query,
             "range": f"0-{max_results - 1}",
         }
+
         resp = requests.get(API_SEARCH_URL, headers=headers, params=params)
+        logger.info(f"[FranceTravail] Status: {resp.status_code}")
+
+        if resp.status_code == 204 or not resp.text.strip():
+            logger.info("[FranceTravail] Aucun resultat.")
+            return []
+
         resp.raise_for_status()
         data = resp.json()
         offres = data.get("resultats", [])
@@ -52,6 +50,7 @@ def scrape_francetravail(
             })
         logger.info(f"[FranceTravail] {len(jobs)} offre(s) trouvee(s).")
         return jobs
+
     except Exception as e:
         logger.error(f"[FranceTravail] Erreur : {e}")
         return []
