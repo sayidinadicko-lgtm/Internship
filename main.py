@@ -10,12 +10,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 import anthropic
 
-from scrapers import scrape_indeed, scrape_hellowork
+from scrapers.francetravail import scrape_francetravail
 from cv_optimizer import optimize_cv, generate_cover_letter, build_cv_docx, build_cover_letter_docx, docx_to_pdf
-from notifier.email_sender import send_applied_confirmation, send_offer_notification, send_daily_summary
+from notifier.email_sender import send_daily_summary
 
 load_dotenv()
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
 logger = logging.getLogger(__name__)
 
@@ -44,48 +43,41 @@ def generate_docs(job, cv_data, client, output_dir):
     try:
         cv_pdf = docx_to_pdf(cv_docx, str(output_dir))
     except Exception as e:
-        logger.warning(f"Conversion PDF echouee : {e}")
+        logger.warning(f"PDF echoue : {e}")
     json_path = output_dir / f"data_{slug}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump({"job": job, "optimized_cv": optimized, "cover_letter": letter}, f, ensure_ascii=False, indent=2)
     return cv_docx, cv_pdf, lm_docx
 
 
-def process_job_linkedin(job, cv_data, client, output_dir, driver):
-    from applicator.easy_apply import apply_easy_apply
-    print(f"\n{'='*60}\n  {job['title']} - {job['company']}\n{'='*60}")
-    try:
-        cv_docx, cv_pdf, lm_docx = generate_docs(job, cv_data, client, output_dir)
-    except Exception as e:
-        logger.error(f"Erreur generation docs : {e}")
-        return False
-    success = apply_easy_apply(driver, job["url"], cv_data, cv_pdf)
-    print("  Candidature soumise !" if success else "  Easy Apply echoue.")
-    return success
-
-
-def process_job_classic(job, cv_data, client, output_dir):
-    print(f"\n{'='*60}\n  {job['title']} - {job['company']}\n  Source : {job['source']}\n{'='*60}")
+def process_job(job, cv_data, client, output_dir):
+    print(f"\n{'='*60}\n  {job['title']} - {job['company']}\n  Lieu : {job.get('location','')}\n{'='*60}")
     try:
         cv_docx, cv_pdf, lm_docx = generate_docs(job, cv_data, client, output_dir)
         print(f"  CV : {cv_docx}\n  LM : {lm_docx}")
+        return True
     except Exception as e:
         logger.error(f"Erreur : {e}")
+        return False
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--source", choices=["linkedin", "indeed", "hellowork", "all"], default="linkedin")
-    parser.add_argument("--max", type=int, default=20)
     parser.add_argument("--query", type=str, default="stage microelectronique IA embarquee")
-    parser.add_argument("--location", type=str, default="France")
+    parser.add_argument("--location", type=str, default="")
+    parser.add_argument("--max", type=int, default=10)
     parser.add_argument("--cv", type=str, default="cv_data.json")
     parser.add_argument("--output", type=str, default="output")
-    parser.add_argument("--headless", action="store_true", default=False)
     args = parser.parse_args()
 
     if not os.getenv("ANTHROPIC_API_KEY"):
         print("ERREUR : ANTHROPIC_API_KEY manquante")
+        sys.exit(1)
+
+    ft_client_id = os.getenv("FT_CLIENT_ID", "")
+    ft_client_secret = os.getenv("FT_CLIENT_SECRET", "")
+    if not ft_client_id or not ft_client_secret:
+        print("ERREUR : FT_CLIENT_ID ou FT_CLIENT_SECRET manquants")
         sys.exit(1)
 
     if not Path(args.cv).exists():
@@ -100,51 +92,28 @@ def main():
     gmail_address = os.getenv("GMAIL_ADDRESS", "")
     gmail_app_password = os.getenv("GMAIL_APP_PASSWORD", "")
     notify_email = os.getenv("NOTIFY_EMAIL", gmail_address)
-    jobs = []
 
-    if args.source in ("linkedin", "all"):
-        from scrapers.linkedin import scrape_linkedin
-        linkedin_cookies = os.getenv("LINKEDIN_COOKIES", "")
-        linkedin_email = os.getenv("LINKEDIN_EMAIL", "")
-        linkedin_password = os.getenv("LINKEDIN_PASSWORD", "")
-        print(f"\n[Scraping LinkedIn] query='{args.query}' location='{args.location}' max={args.max}")
-        linkedin_jobs, driver = scrape_linkedin(
-            cookies_json=linkedin_cookies,
-            email=linkedin_email,
-            password=linkedin_password,
-            query=args.query,
-            location=args.location,
-            max_jobs=args.max,
-            headless=args.headless,
-        )
-        print(f"[LinkedIn] {len(linkedin_jobs)} offre(s) trouvee(s).")
-        if linkedin_jobs and driver:
-            applied_jobs = []
-            for i, job in enumerate(linkedin_jobs, 1):
-                print(f"\n[LinkedIn {i}/{len(linkedin_jobs)}]")
-                success = process_job_linkedin(job, cv_data, client, output_dir, driver)
-                if success:
-                    applied_jobs.append(job)
-            driver.quit()
-            if applied_jobs and gmail_address and gmail_app_password:
-                send_daily_summary(gmail_address, gmail_app_password, notify_email, applied_jobs)
-                print(f"Recapitulatif envoye a {notify_email}")
-            else:
-                print("\nAucune candidature soumise aujourd'hui.")
+    print(f"\n[France Travail] query='{args.query}' max={args.max}")
+    jobs = scrape_francetravail(
+        client_id=ft_client_id,
+        client_secret=ft_client_secret,
+        query=args.query,
+        location=args.location,
+        max_results=args.max,
+    )
+    print(f"[France Travail] {len(jobs)} offre(s) trouvee(s).")
 
-    if args.source in ("indeed", "all"):
-        indeed_jobs = scrape_indeed(query=args.query, location=args.location, max_results=args.max)
-        jobs += indeed_jobs
-
-    if args.source in ("hellowork", "all"):
-        hw_jobs = scrape_hellowork(query=args.query, location=args.location, max_results=args.max)
-        jobs += hw_jobs
-
+    done = []
     for i, job in enumerate(jobs, 1):
-        print(f"\n[{job['source']} {i}/{len(jobs)}]")
-        process_job_classic(job, cv_data, client, output_dir)
+        print(f"\n[{i}/{len(jobs)}]")
+        if process_job(job, cv_data, client, output_dir):
+            done.append(job)
 
-    print(f"\n{'='*60}\nTermine !\n{'='*60}")
+    if done and gmail_address and gmail_app_password:
+        send_daily_summary(gmail_address, gmail_app_password, notify_email, done)
+        print(f"\nRecapitulatif envoye a {notify_email}")
+
+    print(f"\n{'='*60}\nTermine ! {len(done)} CV genere(s).\n{'='*60}")
 
 
 if __name__ == "__main__":
