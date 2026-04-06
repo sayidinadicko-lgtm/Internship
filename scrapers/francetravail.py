@@ -33,7 +33,6 @@ def scrape_francetravail(
         headers = {"Authorization": f"Bearer {token}"}
         params = {
             "motsCles": query,
-            "typeContrat": "ST",
             "range": f"0-{max_results - 1}",
         }
         resp = requests.get(API_SEARCH_URL, headers=headers, params=params)
