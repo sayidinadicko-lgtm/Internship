@@ -16,7 +16,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt && sudo apt-get install -y --fix-missing libreoffice
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y libgstreamer-plugins-base1.0-0 || true
+          sudo apt-get install -y -f libreoffice || echo "LibreOffice non dispo, PDF skipped"
 
       - name: Create .env
         run: |
