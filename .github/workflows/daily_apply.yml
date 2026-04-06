@@ -15,34 +15,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Chrome
-        run: |
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update && sudo apt-get install -y google-chrome-stable
-
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Create .env
         run: |
           echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
-          echo "LINKEDIN_EMAIL=${{ secrets.LINKEDIN_EMAIL }}" >> .env
-          echo "LINKEDIN_PASSWORD=${{ secrets.LINKEDIN_PASSWORD }}" >> .env
           echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS }}" >> .env
           echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}" >> .env
           echo "NOTIFY_EMAIL=${{ secrets.NOTIFY_EMAIL }}" >> .env
+          echo "FT_CLIENT_ID=${{ secrets.FT_CLIENT_ID }}" >> .env
+          echo "FT_CLIENT_SECRET=${{ secrets.FT_CLIENT_SECRET }}" >> .env
 
       - name: Run
-        env:
-          LINKEDIN_COOKIES: ${{ secrets.LINKEDIN_COOKIES }}
         run: |
           python main.py \
-            --source "${{ vars.SOURCE }}" \
             --query "${{ vars.SEARCH_QUERY }}" \
-            --location "${{ vars.SEARCH_LOCATION }}" \
-            --max ${{ vars.MAX_JOBS }} \
-            --headless
+            --max ${{ vars.MAX_JOBS }}
 
       - name: Upload docs
         uses: actions/upload-artifact@v4
