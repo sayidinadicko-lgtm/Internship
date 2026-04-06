@@ -55,10 +55,10 @@ def process_job(job, cv_data, client, output_dir):
     try:
         cv_docx, cv_pdf, lm_docx = generate_docs(job, cv_data, client, output_dir)
         print(f"  CV : {cv_docx}\n  LM : {lm_docx}")
-        return True
+        return cv_docx, lm_docx
     except Exception as e:
         logger.error(f"Erreur : {e}")
-        return False
+        return None, None
 
 
 def main():
@@ -93,21 +93,30 @@ def main():
     gmail_app_password = os.getenv("GMAIL_APP_PASSWORD", "")
     notify_email = os.getenv("NOTIFY_EMAIL", gmail_address)
 
-    print(f"\n[France Travail] query='{args.query}' max={args.max}")
-    jobs = scrape_francetravail(
-        client_id=ft_client_id,
-        client_secret=ft_client_secret,
-        query=args.query,
-        location=args.location,
-        max_results=args.max,
-    )
-    print(f"[France Travail] {len(jobs)} offre(s) trouvee(s).")
+    queries = [q.strip() for q in args.query.split(',') if q.strip()]
+    seen_urls = set()
+    jobs = []
+    for q in queries:
+        print(f"\n[France Travail] query='{q}'")
+        results = scrape_francetravail(
+            client_id=ft_client_id,
+            client_secret=ft_client_secret,
+            query=q,
+            location=args.location,
+            max_results=args.max,
+        )
+        for job in results:
+            if job['url'] not in seen_urls:
+                seen_urls.add(job['url'])
+                jobs.append(job)
+    print(f"[France Travail] {len(jobs)} offre(s) trouvee(s) au total.")
 
     done = []
     for i, job in enumerate(jobs, 1):
         print(f"\n[{i}/{len(jobs)}]")
-        if process_job(job, cv_data, client, output_dir):
-            done.append(job)
+        cv_path, lm_path = process_job(job, cv_data, client, output_dir)
+        if cv_path:
+            done.append({"job": job, "cv_path": cv_path, "lm_path": lm_path})
 
     if done and gmail_address and gmail_app_password:
         send_daily_summary(gmail_address, gmail_app_password, notify_email, done)

@@ -3,7 +3,7 @@ Envoi d'emails de notification via Gmail SMTP.
 
 Deux types de mails :
 1. Confirmation de candidature (Easy Apply soumis)
-2. Notification d'offre (non Easy Apply) avec CV + LM en pièces jointes
+2. Notification d'offre (non Easy Apply) avec CV + LM en piÃƒÂ¨ces jointes
 """
 
 import smtplib
@@ -45,16 +45,16 @@ def send_applied_confirmation(
     job: dict,
 ):
     """
-    Envoie un mail de confirmation après une candidature Easy Apply réussie.
+    Envoie un mail de confirmation aprÃƒÂ¨s une candidature Easy Apply rÃƒÂ©ussie.
     """
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"✅ Candidature envoyée — {job['title']} chez {job['company']}"
+    msg["Subject"] = f"Ã¢Å“â€¦ Candidature envoyÃƒÂ©e Ã¢â‚¬â€ {job['title']} chez {job['company']}"
     msg["From"] = gmail_address
     msg["To"] = to_email
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
-      <h2 style="color: #0a66c2;">✅ Candidature envoyée avec succès</h2>
+      <h2 style="color: #0a66c2;">Ã¢Å“â€¦ Candidature envoyÃƒÂ©e avec succÃƒÂ¨s</h2>
       <table style="width:100%; border-collapse:collapse;">
         <tr><td style="padding:8px; font-weight:bold;">Poste</td>
             <td style="padding:8px;">{job['title']}</td></tr>
@@ -68,22 +68,27 @@ def send_applied_confirmation(
             <td style="padding:8px;"><a href="{job['url']}" style="color:#0a66c2;">Voir l'offre</a></td></tr>
       </table>
       <p style="margin-top:20px; color:#666; font-size:13px;">
-        Ta candidature a été soumise automatiquement via LinkedIn Easy Apply.<br>
-        Le CV et la lettre de motivation ont été adaptés spécifiquement pour cette offre.
+        Ta candidature a ÃƒÂ©tÃƒÂ© soumise automatiquement via LinkedIn Easy Apply.<br>
+        Le CV et la lettre de motivation ont ÃƒÂ©tÃƒÂ© adaptÃƒÂ©s spÃƒÂ©cifiquement pour cette offre.
       </p>
       <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-      <p style="color:#999; font-size:12px;">CV Optimizer — Internship Automation</p>
+      <p style="color:#999; font-size:12px;">CV Optimizer Ã¢â‚¬â€ Internship Automation</p>
     </body></html>
     """
 
     msg.attach(MIMEText(html, "html"))
 
+    for item in applied_jobs:
+        if isinstance(item, dict) and "cv_path" in item:
+            _attach_file(msg, item["cv_path"])
+            _attach_file(msg, item["lm_path"])
+
     try:
         with _build_smtp(gmail_address, gmail_app_password) as server:
             server.sendmail(gmail_address, to_email, msg.as_string())
-        logger.info(f"[Email] Confirmation envoyée pour {job['title']} chez {job['company']}")
+        logger.info(f"[Email] Confirmation envoyÃƒÂ©e pour {job['title']} chez {job['company']}")
     except Exception as e:
-        logger.error(f"[Email] Échec envoi confirmation : {e}")
+        logger.error(f"[Email] Ãƒâ€°chec envoi confirmation : {e}")
 
 
 def send_offer_notification(
@@ -96,23 +101,23 @@ def send_offer_notification(
 ):
     """
     Envoie un mail de notification pour une offre non Easy Apply,
-    avec le CV et la LM en pièces jointes.
+    avec le CV et la LM en piÃƒÂ¨ces jointes.
     """
     msg = MIMEMultipart()
-    msg["Subject"] = f"📋 Offre correspondante — {job['title']} chez {job['company']}"
+    msg["Subject"] = f"Ã°Å¸â€œâ€¹ Offre correspondante Ã¢â‚¬â€ {job['title']} chez {job['company']}"
     msg["From"] = gmail_address
     msg["To"] = to_email
 
-    # Description tronquée pour le mail
+    # Description tronquÃƒÂ©e pour le mail
     description_preview = job.get("description", "")[:500].replace("\n", "<br>")
     if len(job.get("description", "")) > 500:
         description_preview += "..."
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
-      <h2 style="color: #e07b00;">📋 Nouvelle offre de stage correspondant à ton profil</h2>
+      <h2 style="color: #e07b00;">Ã°Å¸â€œâ€¹ Nouvelle offre de stage correspondant ÃƒÂ  ton profil</h2>
       <p>Cette offre n'a pas de candidature directe (pas de Easy Apply).<br>
-         <strong>Le CV et la lettre de motivation sont en pièces jointes.</strong></p>
+         <strong>Le CV et la lettre de motivation sont en piÃƒÂ¨ces jointes.</strong></p>
 
       <table style="width:100%; border-collapse:collapse;">
         <tr><td style="padding:8px; font-weight:bold;">Poste</td>
@@ -125,7 +130,7 @@ def send_offer_notification(
             <td style="padding:8px;">LinkedIn</td></tr>
       </table>
 
-      <h3 style="margin-top:20px;">Aperçu de l'offre</h3>
+      <h3 style="margin-top:20px;">AperÃƒÂ§u de l'offre</h3>
       <div style="background:#f9f9f9; padding:15px; border-left:4px solid #e07b00; font-size:14px;">
         {description_preview}
       </div>
@@ -134,16 +139,16 @@ def send_offer_notification(
         <a href="{job['url']}"
            style="background:#0a66c2; color:white; padding:12px 24px;
                   text-decoration:none; border-radius:5px; font-weight:bold;">
-          👉 Postuler sur LinkedIn
+          Ã°Å¸â€˜â€° Postuler sur LinkedIn
         </a>
       </div>
 
       <p style="margin-top:20px; color:#666; font-size:13px;">
-        📎 <strong>CV_optimisé.docx</strong> — CV adapté pour cette offre<br>
-        📎 <strong>Lettre_motivation.docx</strong> — Lettre de motivation personnalisée
+        Ã°Å¸â€œÅ½ <strong>CV_optimisÃƒÂ©.docx</strong> Ã¢â‚¬â€ CV adaptÃƒÂ© pour cette offre<br>
+        Ã°Å¸â€œÅ½ <strong>Lettre_motivation.docx</strong> Ã¢â‚¬â€ Lettre de motivation personnalisÃƒÂ©e
       </p>
       <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-      <p style="color:#999; font-size:12px;">CV Optimizer — Internship Automation</p>
+      <p style="color:#999; font-size:12px;">CV Optimizer Ã¢â‚¬â€ Internship Automation</p>
     </body></html>
     """
 
@@ -154,9 +159,9 @@ def send_offer_notification(
     try:
         with _build_smtp(gmail_address, gmail_app_password) as server:
             server.sendmail(gmail_address, to_email, msg.as_string())
-        logger.info(f"[Email] Notification envoyée pour {job['title']} chez {job['company']}")
+        logger.info(f"[Email] Notification envoyÃƒÂ©e pour {job['title']} chez {job['company']}")
     except Exception as e:
-        logger.error(f"[Email] Échec envoi notification : {e}")
+        logger.error(f"[Email] Ãƒâ€°chec envoi notification : {e}")
 
 
 def send_daily_summary(
@@ -167,14 +172,14 @@ def send_daily_summary(
     date_str: str = None,
 ):
     """
-    Envoie un mail récapitulatif quotidien listant toutes les candidatures soumises.
+    Envoie un mail rÃƒÂ©capitulatif quotidien listant toutes les candidatures soumises.
     """
     from datetime import date
     if not date_str:
         date_str = date.today().strftime("%d/%m/%Y")
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"✅ Récap du jour — {len(applied_jobs)} candidatures envoyées ({date_str})"
+    msg["Subject"] = f"Ã¢Å“â€¦ RÃƒÂ©cap du jour Ã¢â‚¬â€ {len(applied_jobs)} candidatures envoyÃƒÂ©es ({date_str})"
     msg["From"] = gmail_address
     msg["To"] = to_email
 
@@ -194,9 +199,9 @@ def send_daily_summary(
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 700px; margin: auto;">
-      <h2 style="color: #0a66c2;">✅ Récapitulatif des candidatures — {date_str}</h2>
+      <h2 style="color: #0a66c2;">Ã¢Å“â€¦ RÃƒÂ©capitulatif des candidatures Ã¢â‚¬â€ {date_str}</h2>
       <p style="font-size:16px;">
-        <strong>{len(applied_jobs)} candidatures</strong> ont été soumises automatiquement aujourd'hui via LinkedIn Easy Apply.
+        <strong>{len(applied_jobs)} candidatures</strong> ont ÃƒÂ©tÃƒÂ© soumises automatiquement aujourd'hui via LinkedIn Easy Apply.
       </p>
 
       <table style="width:100%; border-collapse:collapse; margin-top:15px;">
@@ -213,19 +218,24 @@ def send_daily_summary(
       </table>
 
       <p style="margin-top:20px; color:#666; font-size:13px;">
-        Toutes ces candidatures ont été soumises avec ton CV et ta lettre de motivation personnalisés.<br>
-        Tu peux recevoir des réponses directement sur <strong>sayidina.dicko@etu.univ-amu.fr</strong>.
+        Toutes ces candidatures ont ÃƒÂ©tÃƒÂ© soumises avec ton CV et ta lettre de motivation personnalisÃƒÂ©s.<br>
+        Tu peux recevoir des rÃƒÂ©ponses directement sur <strong>sayidina.dicko@etu.univ-amu.fr</strong>.
       </p>
       <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-      <p style="color:#999; font-size:12px;">CV Optimizer — Internship Automation</p>
+      <p style="color:#999; font-size:12px;">CV Optimizer Ã¢â‚¬â€ Internship Automation</p>
     </body></html>
     """
 
     msg.attach(MIMEText(html, "html"))
 
+    for item in applied_jobs:
+        if isinstance(item, dict) and "cv_path" in item:
+            _attach_file(msg, item["cv_path"])
+            _attach_file(msg, item["lm_path"])
+
     try:
         with _build_smtp(gmail_address, gmail_app_password) as server:
             server.sendmail(gmail_address, to_email, msg.as_string())
-        logger.info(f"[Email] Récapitulatif envoyé : {len(applied_jobs)} candidatures.")
+        logger.info(f"[Email] RÃƒÂ©capitulatif envoyÃƒÂ© : {len(applied_jobs)} candidatures.")
     except Exception as e:
-        logger.error(f"[Email] Échec envoi récapitulatif : {e}")
+        logger.error(f"[Email] Ãƒâ€°chec envoi rÃƒÂ©capitulatif : {e}")
