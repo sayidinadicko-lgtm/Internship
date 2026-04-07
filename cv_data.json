@@ -6,117 +6,117 @@
     "phone": "+33 6 25 85 95 82",
     "linkedin": "",
     "github": "",
-    "city": "Marseille"`n    "city": "Marseille"
+    "city": "Marseille"
   },
   "education": [
     {
-      "degree": "BaccalaurÃƒÆ’Ã‚Â©at Scientifique",
-      "school": "LycÃƒÆ’Ã‚Â©e KND, SÃƒÆ’Ã‚Â©nÃƒÆ’Ã‚Â©gal",
-      "year": "sept. 2019 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ juil. 2020",
+      "degree": "BaccalaurÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©at Scientifique",
+      "school": "LycÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e KND, SÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gal",
+      "year": "sept. 2019 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ juil. 2020",
       "mention": ""
     },
     {
-      "degree": "CPGE ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ PrÃƒÆ’Ã‚Â©pa PTSI",
-      "school": "LycÃƒÆ’Ã‚Â©e Baggio, Lille",
-      "year": "sept. 2020 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ juil. 2022",
+      "degree": "CPGE ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ PrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©pa PTSI",
+      "school": "LycÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e Baggio, Lille",
+      "year": "sept. 2020 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ juil. 2022",
       "mention": ""
     },
     {
-      "degree": "Cycle IngÃƒÆ’Ã‚Â©nieur ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ MicroÃƒÆ’Ã‚Â©lectronique et TÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©communications",
-      "school": "Polytech Marseille, Aix-Marseille UniversitÃƒÆ’Ã‚Â©",
-      "year": "sept. 2023 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ aujourd'hui",
-      "mention": "5ÃƒÆ’Ã‚Â¨me annÃƒÆ’Ã‚Â©e (stage de fin d'ÃƒÆ’Ã‚Â©tudes ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ 6 mois)"
+      "degree": "Cycle IngÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©nieur ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ MicroÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectronique et TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©communications",
+      "school": "Polytech Marseille, Aix-Marseille UniversitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©",
+      "year": "sept. 2023 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ aujourd'hui",
+      "mention": "5ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨me annÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e (stage de fin d'ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tudes ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ 6 mois)"
     }
   ],
   "skills": {
     "programming": ["C", "C++", "Python"],
     "embedded_ai": [
-      "IA embarquÃƒÆ’Ã‚Â©e / Reconnaissance d'images",
-      "Projet NPU sur carte DBX ModÃƒÆ’Ã‚Â¨le A",
+      "IA embarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e / Reconnaissance d'images",
+      "Projet NPU sur carte DBX ModÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨le A",
       "Classification d'images (CNN)",
       "TensorFlow Lite",
       "TinyML"
     ],
     "embedded_systems": [
-      "SystÃƒÆ’Ã‚Â¨mes embarquÃƒÆ’Ã‚Â©s",
-      "MicrocontrÃƒÆ’Ã‚Â´leurs NXP CUP",
+      "SystÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨mes embarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s",
+      "MicrocontrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´leurs NXP CUP",
       "S32K144-Q100",
       "UART / SPI / I2C / CAN"
     ],
     "hardware_design": [
       "VHDL", "Verilog",
-      "Conception numÃƒÆ’Ã‚Â©rique (simulation, synthÃƒÆ’Ã‚Â¨se, validation)",
-      "Flot complet VLSI (RTL ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ simulation ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ synthÃƒÆ’Ã‚Â¨se ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ P&R ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ layout ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ timing analysis)",
+      "Conception numÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rique (simulation, synthÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨se, validation)",
+      "Flot complet VLSI (RTL ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ simulation ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ synthÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨se ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ P&R ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ layout ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ timing analysis)",
       "Conception ASIC",
       "Conception de layouts (DRC, LVS)",
       "Placement et routage avec Cadence Innovus",
-      "Conception de circuits intÃƒÆ’Ã‚Â©grÃƒÆ’Ã‚Â©s analogiques ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Cadence Virtuoso"
+      "Conception de circuits intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©grÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s analogiques ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Cadence Virtuoso"
     ],
     "simulation": [
-      "Simulation analogique avancÃƒÆ’Ã‚Â©e (AC/DC, Transient, Noise, stabilitÃƒÆ’Ã‚Â©, THD, corner, Monte Carlo)",
+      "Simulation analogique avancÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e (AC/DC, Transient, Noise, stabilitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©, THD, corner, Monte Carlo)",
       "TCAD Sentaurus"
     ],
     "tools": ["Cadence", "Cadence Innovus", "Cadence Virtuoso", "TCAD Sentaurus", "SolidWorks"]
   },
   "projects": [
     {
-      "title": "IA embarquÃƒÆ’Ã‚Â©e ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Reconnaissance d'images sur carte DBX ModÃƒÆ’Ã‚Â¨le A (NPU intÃƒÆ’Ã‚Â©grÃƒÆ’Ã‚Â©)",
-      "description": "DÃƒÆ’Ã‚Â©veloppement d'un systÃƒÆ’Ã‚Â¨me de classification d'images en temps rÃƒÆ’Ã‚Â©el sur une carte intÃƒÆ’Ã‚Â©grant un NPU. Classification 3 classes : avion, bateau, voiture. ImplÃƒÆ’Ã‚Â©mentation et optimisation du modÃƒÆ’Ã‚Â¨le CNN pour l'infÃƒÆ’Ã‚Â©rence embarquÃƒÆ’Ã‚Â©e.",
-      "technologies": ["Python", "C", "NPU", "IA embarquÃƒÆ’Ã‚Â©e", "Classification d'images"],
+      "title": "IA embarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reconnaissance d'images sur carte DBX ModÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨le A (NPU intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©grÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©)",
+      "description": "DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©veloppement d'un systÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨me de classification d'images en temps rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©el sur une carte intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©grant un NPU. Classification 3 classes : avion, bateau, voiture. ImplÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©mentation et optimisation du modÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨le CNN pour l'infÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rence embarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e.",
+      "technologies": ["Python", "C", "NPU", "IA embarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e", "Classification d'images"],
       "year": "2024"
     },
     {
-      "title": "NXP CUP ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Optimisation de l'algorithme de la camÃƒÆ’Ã‚Â©ra Pixy2",
-      "description": "Optimisation de l'algorithme de traitement d'image de la camÃƒÆ’Ã‚Â©ra Pixy2 pour le pilotage autonome d'un vÃƒÆ’Ã‚Â©hicule NXP CUP. DÃƒÆ’Ã‚Â©veloppement sur microcontrÃƒÆ’Ã‚Â´leur S32K144-Q100 avec contraintes temps rÃƒÆ’Ã‚Â©el.",
-      "technologies": ["C", "S32K144-Q100", "NXP CUP", "Traitement d'image", "EmbarquÃƒÆ’Ã‚Â©"],
-      "year": "2024 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ en cours"
+      "title": "NXP CUP ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Optimisation de l'algorithme de la camÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ra Pixy2",
+      "description": "Optimisation de l'algorithme de traitement d'image de la camÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ra Pixy2 pour le pilotage autonome d'un vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©hicule NXP CUP. DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©veloppement sur microcontrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´leur S32K144-Q100 avec contraintes temps rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©el.",
+      "technologies": ["C", "S32K144-Q100", "NXP CUP", "Traitement d'image", "EmbarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©"],
+      "year": "2024 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ en cours"
     },
     {
-      "title": "Conception d'un microprocesseur RISC 8 bits ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Projet puce ÃƒÆ’Ã‚Â©lectronique",
-      "description": "RÃƒÆ’Ã‚Â©alisation en groupe d'une puce ÃƒÆ’Ã‚Â©lectronique intÃƒÆ’Ã‚Â©grant un microprocesseur 8 bits de type RISC. Conception de circuits intÃƒÆ’Ã‚Â©grÃƒÆ’Ã‚Â©s numÃƒÆ’Ã‚Â©riques et programmation microcontrÃƒÆ’Ã‚Â´leurs, en suivant le flot complet VLSI.",
-      "technologies": ["VHDL", "Cadence", "VLSI", "Conception numÃƒÆ’Ã‚Â©rique"],
+      "title": "Conception d'un microprocesseur RISC 8 bits ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Projet puce ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectronique",
+      "description": "RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©alisation en groupe d'une puce ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectronique intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©grant un microprocesseur 8 bits de type RISC. Conception de circuits intÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©grÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s numÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©riques et programmation microcontrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´leurs, en suivant le flot complet VLSI.",
+      "technologies": ["VHDL", "Cadence", "VLSI", "Conception numÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rique"],
       "year": "2023"
     }
   ],
   "experience": [
     {
-      "title": "RÃƒÆ’Ã‚Â©parateur d'appareils ÃƒÆ’Ã‚Â©lectroniques",
+      "title": "RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©parateur d'appareils ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectroniques",
       "company": "BFK Net Provence",
       "location": "Marseille",
-      "period": "juil. 2025 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ sept. 2025",
-      "description": "Diagnostic et rÃƒÆ’Ã‚Â©paration d'appareils ÃƒÆ’Ã‚Â©lectroniques (tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©phones, ordinateurs, ÃƒÆ’Ã‚Â©quipements divers). Identification des pannes matÃƒÆ’Ã‚Â©rielles et logicielles."
+      "period": "juil. 2025 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ sept. 2025",
+      "description": "Diagnostic et rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©paration d'appareils ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectroniques (tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©phones, ordinateurs, ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©quipements divers). Identification des pannes matÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rielles et logicielles."
     },
     {
-      "title": "Stage ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Fabrication de cellules photovoltaÃƒÆ’Ã‚Â¯ques",
+      "title": "Stage ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Fabrication de cellules photovoltaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ques",
       "company": "AIME",
       "location": "Toulouse",
       "period": "",
-      "description": "Accompagnement ÃƒÆ’Ã‚Â  la fabrication de cellules photovoltaÃƒÆ’Ã‚Â¯ques en salle blanche. DÃƒÆ’Ã‚Â©couverte des procÃƒÆ’Ã‚Â©dÃƒÆ’Ã‚Â©s de microÃƒÆ’Ã‚Â©lectronique (dÃƒÆ’Ã‚Â©pÃƒÆ’Ã‚Â´t, gravure, caractÃƒÆ’Ã‚Â©risation)."
+      "description": "Accompagnement ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  la fabrication de cellules photovoltaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ques en salle blanche. DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©couverte des procÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s de microÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectronique (dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©pÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´t, gravure, caractÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©risation)."
     },
     {
       "title": "Professeur particulier",
-      "company": "MÃƒÆ’Ã‚Â©thodik",
+      "company": "MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©thodik",
       "location": "Paris",
-      "period": "oct. 2022 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ juil. 2023",
-      "description": "Enseignement de matiÃƒÆ’Ã‚Â¨res scientifiques (mathÃƒÆ’Ã‚Â©matiques, physique) ÃƒÆ’Ã‚Â  des lycÃƒÆ’Ã‚Â©ens et ÃƒÆ’Ã‚Â©tudiants en prÃƒÆ’Ã‚Â©pa."
+      "period": "oct. 2022 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ juil. 2023",
+      "description": "Enseignement de matiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨res scientifiques (mathÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©matiques, physique) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  des lycÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ens et ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tudiants en prÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©pa."
     },
     {
       "title": "Serveur / Barman",
       "company": "Rodizio Brazil",
       "location": "Marseille",
-      "period": "dÃƒÆ’Ã‚Â©c. 2023 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ aujourd'hui",
+      "period": "dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©c. 2023 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ aujourd'hui",
       "description": "Service en salle et gestion du bar."
     }
   ],
   "languages": [
-    {"language": "FranÃƒÆ’Ã‚Â§ais", "level": "Courant"},
-    {"language": "Anglais", "level": "IntermÃƒÆ’Ã‚Â©diaire (B2)"},
+    {"language": "FranÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ais", "level": "Courant"},
+    {"language": "Anglais", "level": "IntermÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©diaire (B2)"},
     {"language": "Wolof", "level": "Langue maternelle"}
   ],
   "interests": [
-    "Intelligence artificielle embarquÃƒÆ’Ã‚Â©e",
-    "MicroÃƒÆ’Ã‚Â©lectronique et conception VLSI",
-    "Robotique et systÃƒÆ’Ã‚Â¨mes autonomes",
-    "ÃƒÆ’Ã¢â‚¬Â°lectronique DIY"
+    "Intelligence artificielle embarquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e",
+    "MicroÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©lectronique et conception VLSI",
+    "Robotique et systÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨mes autonomes",
+    "ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°lectronique DIY"
   ]
 }
