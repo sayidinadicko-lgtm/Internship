@@ -23,7 +23,9 @@ def scrape_francetravail(client_id, client_secret, query="stage microelectroniqu
         token = _get_token(client_id, client_secret)
         headers = {"Authorization": f"Bearer {token}"}
         params = {
-            "motsCles": query,`n            "typeContrat": "STG",`n            "range": f"0-{max_results - 1}",
+            "motsCles": query,
+            "typeContrat": "STG",
+            "range": f"0-{max_results - 1}",
         }
 
         resp = requests.get(API_SEARCH_URL, headers=headers, params=params)
