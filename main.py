@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import anthropic
 
 from scrapers.francetravail import scrape_francetravail
+from scrapers.apec import scrape_apec
 from cv_optimizer import optimize_cv, generate_cover_letter, build_cv_docx, build_cover_letter_docx, docx_to_pdf
 from notifier.email_sender import send_daily_summary
 
@@ -110,6 +111,15 @@ def main():
                 seen_urls.add(job['url'])
                 jobs.append(job)
     print(f"[France Travail] {len(jobs)} offre(s) trouvee(s) au total.")
+
+    # Recherche APEC (stages)
+    print(f"\n[APEC] query='{args.query}'")
+    apec_jobs = scrape_apec(query=args.query, max_results=args.max)
+    for job in apec_jobs:
+        if job['url'] not in seen_urls:
+            seen_urls.add(job['url'])
+            jobs.append(job)
+    print(f"[APEC] {len(apec_jobs)} offre(s) trouvee(s).")
 
     done = []
     for i, job in enumerate(jobs, 1):
