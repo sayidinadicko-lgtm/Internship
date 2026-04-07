@@ -5,117 +5,117 @@
     "email": "sayidina.dicko@etu.univ-amu.fr",
     "phone": "+33 6 25 85 95 82",
     "linkedin": "",
-    "github": ""
+    "github": ""`n    "city": "Marseille"
   },
   "education": [
     {
-      "degree": "Baccalauréat Scientifique",
-      "school": "Lycée KND, Sénégal",
-      "year": "sept. 2019 – juil. 2020",
+      "degree": "BaccalaurÃƒÂ©at Scientifique",
+      "school": "LycÃƒÂ©e KND, SÃƒÂ©nÃƒÂ©gal",
+      "year": "sept. 2019 Ã¢â‚¬â€œ juil. 2020",
       "mention": ""
     },
     {
-      "degree": "CPGE – Prépa PTSI",
-      "school": "Lycée Baggio, Lille",
-      "year": "sept. 2020 – juil. 2022",
+      "degree": "CPGE Ã¢â‚¬â€œ PrÃƒÂ©pa PTSI",
+      "school": "LycÃƒÂ©e Baggio, Lille",
+      "year": "sept. 2020 Ã¢â‚¬â€œ juil. 2022",
       "mention": ""
     },
     {
-      "degree": "Cycle Ingénieur – Microélectronique et Télécommunications",
-      "school": "Polytech Marseille, Aix-Marseille Université",
-      "year": "sept. 2023 – aujourd'hui",
-      "mention": "5ème année (stage de fin d'études – 6 mois)"
+      "degree": "Cycle IngÃƒÂ©nieur Ã¢â‚¬â€œ MicroÃƒÂ©lectronique et TÃƒÂ©lÃƒÂ©communications",
+      "school": "Polytech Marseille, Aix-Marseille UniversitÃƒÂ©",
+      "year": "sept. 2023 Ã¢â‚¬â€œ aujourd'hui",
+      "mention": "5ÃƒÂ¨me annÃƒÂ©e (stage de fin d'ÃƒÂ©tudes Ã¢â‚¬â€œ 6 mois)"
     }
   ],
   "skills": {
     "programming": ["C", "C++", "Python"],
     "embedded_ai": [
-      "IA embarquée / Reconnaissance d'images",
-      "Projet NPU sur carte DBX Modèle A",
+      "IA embarquÃƒÂ©e / Reconnaissance d'images",
+      "Projet NPU sur carte DBX ModÃƒÂ¨le A",
       "Classification d'images (CNN)",
       "TensorFlow Lite",
       "TinyML"
     ],
     "embedded_systems": [
-      "Systèmes embarqués",
-      "Microcontrôleurs NXP CUP",
+      "SystÃƒÂ¨mes embarquÃƒÂ©s",
+      "MicrocontrÃƒÂ´leurs NXP CUP",
       "S32K144-Q100",
       "UART / SPI / I2C / CAN"
     ],
     "hardware_design": [
       "VHDL", "Verilog",
-      "Conception numérique (simulation, synthèse, validation)",
-      "Flot complet VLSI (RTL → simulation → synthèse → P&R → layout → timing analysis)",
+      "Conception numÃƒÂ©rique (simulation, synthÃƒÂ¨se, validation)",
+      "Flot complet VLSI (RTL Ã¢â€ â€™ simulation Ã¢â€ â€™ synthÃƒÂ¨se Ã¢â€ â€™ P&R Ã¢â€ â€™ layout Ã¢â€ â€™ timing analysis)",
       "Conception ASIC",
       "Conception de layouts (DRC, LVS)",
       "Placement et routage avec Cadence Innovus",
-      "Conception de circuits intégrés analogiques – Cadence Virtuoso"
+      "Conception de circuits intÃƒÂ©grÃƒÂ©s analogiques Ã¢â‚¬â€œ Cadence Virtuoso"
     ],
     "simulation": [
-      "Simulation analogique avancée (AC/DC, Transient, Noise, stabilité, THD, corner, Monte Carlo)",
+      "Simulation analogique avancÃƒÂ©e (AC/DC, Transient, Noise, stabilitÃƒÂ©, THD, corner, Monte Carlo)",
       "TCAD Sentaurus"
     ],
     "tools": ["Cadence", "Cadence Innovus", "Cadence Virtuoso", "TCAD Sentaurus", "SolidWorks"]
   },
   "projects": [
     {
-      "title": "IA embarquée – Reconnaissance d'images sur carte DBX Modèle A (NPU intégré)",
-      "description": "Développement d'un système de classification d'images en temps réel sur une carte intégrant un NPU. Classification 3 classes : avion, bateau, voiture. Implémentation et optimisation du modèle CNN pour l'inférence embarquée.",
-      "technologies": ["Python", "C", "NPU", "IA embarquée", "Classification d'images"],
+      "title": "IA embarquÃƒÂ©e Ã¢â‚¬â€œ Reconnaissance d'images sur carte DBX ModÃƒÂ¨le A (NPU intÃƒÂ©grÃƒÂ©)",
+      "description": "DÃƒÂ©veloppement d'un systÃƒÂ¨me de classification d'images en temps rÃƒÂ©el sur une carte intÃƒÂ©grant un NPU. Classification 3 classes : avion, bateau, voiture. ImplÃƒÂ©mentation et optimisation du modÃƒÂ¨le CNN pour l'infÃƒÂ©rence embarquÃƒÂ©e.",
+      "technologies": ["Python", "C", "NPU", "IA embarquÃƒÂ©e", "Classification d'images"],
       "year": "2024"
     },
     {
-      "title": "NXP CUP – Optimisation de l'algorithme de la caméra Pixy2",
-      "description": "Optimisation de l'algorithme de traitement d'image de la caméra Pixy2 pour le pilotage autonome d'un véhicule NXP CUP. Développement sur microcontrôleur S32K144-Q100 avec contraintes temps réel.",
-      "technologies": ["C", "S32K144-Q100", "NXP CUP", "Traitement d'image", "Embarqué"],
-      "year": "2024 – en cours"
+      "title": "NXP CUP Ã¢â‚¬â€œ Optimisation de l'algorithme de la camÃƒÂ©ra Pixy2",
+      "description": "Optimisation de l'algorithme de traitement d'image de la camÃƒÂ©ra Pixy2 pour le pilotage autonome d'un vÃƒÂ©hicule NXP CUP. DÃƒÂ©veloppement sur microcontrÃƒÂ´leur S32K144-Q100 avec contraintes temps rÃƒÂ©el.",
+      "technologies": ["C", "S32K144-Q100", "NXP CUP", "Traitement d'image", "EmbarquÃƒÂ©"],
+      "year": "2024 Ã¢â‚¬â€œ en cours"
     },
     {
-      "title": "Conception d'un microprocesseur RISC 8 bits – Projet puce électronique",
-      "description": "Réalisation en groupe d'une puce électronique intégrant un microprocesseur 8 bits de type RISC. Conception de circuits intégrés numériques et programmation microcontrôleurs, en suivant le flot complet VLSI.",
-      "technologies": ["VHDL", "Cadence", "VLSI", "Conception numérique"],
+      "title": "Conception d'un microprocesseur RISC 8 bits Ã¢â‚¬â€œ Projet puce ÃƒÂ©lectronique",
+      "description": "RÃƒÂ©alisation en groupe d'une puce ÃƒÂ©lectronique intÃƒÂ©grant un microprocesseur 8 bits de type RISC. Conception de circuits intÃƒÂ©grÃƒÂ©s numÃƒÂ©riques et programmation microcontrÃƒÂ´leurs, en suivant le flot complet VLSI.",
+      "technologies": ["VHDL", "Cadence", "VLSI", "Conception numÃƒÂ©rique"],
       "year": "2023"
     }
   ],
   "experience": [
     {
-      "title": "Réparateur d'appareils électroniques",
+      "title": "RÃƒÂ©parateur d'appareils ÃƒÂ©lectroniques",
       "company": "BFK Net Provence",
       "location": "Marseille",
-      "period": "juil. 2025 – sept. 2025",
-      "description": "Diagnostic et réparation d'appareils électroniques (téléphones, ordinateurs, équipements divers). Identification des pannes matérielles et logicielles."
+      "period": "juil. 2025 Ã¢â‚¬â€œ sept. 2025",
+      "description": "Diagnostic et rÃƒÂ©paration d'appareils ÃƒÂ©lectroniques (tÃƒÂ©lÃƒÂ©phones, ordinateurs, ÃƒÂ©quipements divers). Identification des pannes matÃƒÂ©rielles et logicielles."
     },
     {
-      "title": "Stage – Fabrication de cellules photovoltaïques",
+      "title": "Stage Ã¢â‚¬â€œ Fabrication de cellules photovoltaÃƒÂ¯ques",
       "company": "AIME",
       "location": "Toulouse",
       "period": "",
-      "description": "Accompagnement à la fabrication de cellules photovoltaïques en salle blanche. Découverte des procédés de microélectronique (dépôt, gravure, caractérisation)."
+      "description": "Accompagnement ÃƒÂ  la fabrication de cellules photovoltaÃƒÂ¯ques en salle blanche. DÃƒÂ©couverte des procÃƒÂ©dÃƒÂ©s de microÃƒÂ©lectronique (dÃƒÂ©pÃƒÂ´t, gravure, caractÃƒÂ©risation)."
     },
     {
       "title": "Professeur particulier",
-      "company": "Méthodik",
+      "company": "MÃƒÂ©thodik",
       "location": "Paris",
-      "period": "oct. 2022 – juil. 2023",
-      "description": "Enseignement de matières scientifiques (mathématiques, physique) à des lycéens et étudiants en prépa."
+      "period": "oct. 2022 Ã¢â‚¬â€œ juil. 2023",
+      "description": "Enseignement de matiÃƒÂ¨res scientifiques (mathÃƒÂ©matiques, physique) ÃƒÂ  des lycÃƒÂ©ens et ÃƒÂ©tudiants en prÃƒÂ©pa."
     },
     {
       "title": "Serveur / Barman",
       "company": "Rodizio Brazil",
       "location": "Marseille",
-      "period": "déc. 2023 – aujourd'hui",
+      "period": "dÃƒÂ©c. 2023 Ã¢â‚¬â€œ aujourd'hui",
       "description": "Service en salle et gestion du bar."
     }
   ],
   "languages": [
-    {"language": "Français", "level": "Courant"},
-    {"language": "Anglais", "level": "Intermédiaire (B2)"},
+    {"language": "FranÃƒÂ§ais", "level": "Courant"},
+    {"language": "Anglais", "level": "IntermÃƒÂ©diaire (B2)"},
     {"language": "Wolof", "level": "Langue maternelle"}
   ],
   "interests": [
-    "Intelligence artificielle embarquée",
-    "Microélectronique et conception VLSI",
-    "Robotique et systèmes autonomes",
-    "Électronique DIY"
+    "Intelligence artificielle embarquÃƒÂ©e",
+    "MicroÃƒÂ©lectronique et conception VLSI",
+    "Robotique et systÃƒÂ¨mes autonomes",
+    "Ãƒâ€°lectronique DIY"
   ]
 }

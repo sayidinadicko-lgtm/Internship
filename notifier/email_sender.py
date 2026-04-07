@@ -3,7 +3,7 @@ Envoi d'emails de notification via Gmail SMTP.
 
 Deux types de mails :
 1. Confirmation de candidature (Easy Apply soumis)
-2. Notification d'offre (non Easy Apply) avec CV + LM en piÃƒÂ¨ces jointes
+2. Notification d'offre (non Easy Apply) avec CV + LM en piÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ces jointes
 """
 
 import smtplib
@@ -45,16 +45,16 @@ def send_applied_confirmation(
     job: dict,
 ):
     """
-    Envoie un mail de confirmation aprÃƒÂ¨s une candidature Easy Apply rÃƒÂ©ussie.
+    Envoie un mail de confirmation aprÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨s une candidature Easy Apply rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ussie.
     """
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"Ã¢Å“â€¦ Candidature envoyÃƒÂ©e Ã¢â‚¬â€ {job['title']} chez {job['company']}"
+    msg = MIMEMultipart()
+    msg["Subject"] = f"ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Candidature envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â {job['title']} chez {job['company']}"
     msg["From"] = gmail_address
     msg["To"] = to_email
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
-      <h2 style="color: #0a66c2;">Ã¢Å“â€¦ Candidature envoyÃƒÂ©e avec succÃƒÂ¨s</h2>
+      <h2 style="color: #0a66c2;">ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Candidature envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e avec succÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨s</h2>
       <table style="width:100%; border-collapse:collapse;">
         <tr><td style="padding:8px; font-weight:bold;">Poste</td>
             <td style="padding:8px;">{job['title']}</td></tr>
@@ -68,11 +68,11 @@ def send_applied_confirmation(
             <td style="padding:8px;"><a href="{job['url']}" style="color:#0a66c2;">Voir l'offre</a></td></tr>
       </table>
       <p style="margin-top:20px; color:#666; font-size:13px;">
-        Ta candidature a ÃƒÂ©tÃƒÂ© soumise automatiquement via LinkedIn Easy Apply.<br>
-        Le CV et la lettre de motivation ont ÃƒÂ©tÃƒÂ© adaptÃƒÂ©s spÃƒÂ©cifiquement pour cette offre.
+        Ta candidature a ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© soumise automatiquement via LinkedIn Easy Apply.<br>
+        Le CV et la lettre de motivation ont ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© adaptÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s spÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©cifiquement pour cette offre.
       </p>
       <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-      <p style="color:#999; font-size:12px;">CV Optimizer Ã¢â‚¬â€ Internship Automation</p>
+      <p style="color:#999; font-size:12px;">CV Optimizer ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Internship Automation</p>
     </body></html>
     """
 
@@ -86,9 +86,9 @@ def send_applied_confirmation(
     try:
         with _build_smtp(gmail_address, gmail_app_password) as server:
             server.sendmail(gmail_address, to_email, msg.as_string())
-        logger.info(f"[Email] Confirmation envoyÃƒÂ©e pour {job['title']} chez {job['company']}")
+        logger.info(f"[Email] Confirmation envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e pour {job['title']} chez {job['company']}")
     except Exception as e:
-        logger.error(f"[Email] Ãƒâ€°chec envoi confirmation : {e}")
+        logger.error(f"[Email] ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°chec envoi confirmation : {e}")
 
 
 def send_offer_notification(
@@ -101,23 +101,23 @@ def send_offer_notification(
 ):
     """
     Envoie un mail de notification pour une offre non Easy Apply,
-    avec le CV et la LM en piÃƒÂ¨ces jointes.
+    avec le CV et la LM en piÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ces jointes.
     """
     msg = MIMEMultipart()
-    msg["Subject"] = f"Ã°Å¸â€œâ€¹ Offre correspondante Ã¢â‚¬â€ {job['title']} chez {job['company']}"
+    msg["Subject"] = f"ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ Offre correspondante ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â {job['title']} chez {job['company']}"
     msg["From"] = gmail_address
     msg["To"] = to_email
 
-    # Description tronquÃƒÂ©e pour le mail
+    # Description tronquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e pour le mail
     description_preview = job.get("description", "")[:500].replace("\n", "<br>")
     if len(job.get("description", "")) > 500:
         description_preview += "..."
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
-      <h2 style="color: #e07b00;">Ã°Å¸â€œâ€¹ Nouvelle offre de stage correspondant ÃƒÂ  ton profil</h2>
+      <h2 style="color: #e07b00;">ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ Nouvelle offre de stage correspondant ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  ton profil</h2>
       <p>Cette offre n'a pas de candidature directe (pas de Easy Apply).<br>
-         <strong>Le CV et la lettre de motivation sont en piÃƒÂ¨ces jointes.</strong></p>
+         <strong>Le CV et la lettre de motivation sont en piÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ces jointes.</strong></p>
 
       <table style="width:100%; border-collapse:collapse;">
         <tr><td style="padding:8px; font-weight:bold;">Poste</td>
@@ -130,7 +130,7 @@ def send_offer_notification(
             <td style="padding:8px;">LinkedIn</td></tr>
       </table>
 
-      <h3 style="margin-top:20px;">AperÃƒÂ§u de l'offre</h3>
+      <h3 style="margin-top:20px;">AperÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§u de l'offre</h3>
       <div style="background:#f9f9f9; padding:15px; border-left:4px solid #e07b00; font-size:14px;">
         {description_preview}
       </div>
@@ -139,16 +139,16 @@ def send_offer_notification(
         <a href="{job['url']}"
            style="background:#0a66c2; color:white; padding:12px 24px;
                   text-decoration:none; border-radius:5px; font-weight:bold;">
-          Ã°Å¸â€˜â€° Postuler sur LinkedIn
+          ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â° Postuler sur LinkedIn
         </a>
       </div>
 
       <p style="margin-top:20px; color:#666; font-size:13px;">
-        Ã°Å¸â€œÅ½ <strong>CV_optimisÃƒÂ©.docx</strong> Ã¢â‚¬â€ CV adaptÃƒÂ© pour cette offre<br>
-        Ã°Å¸â€œÅ½ <strong>Lettre_motivation.docx</strong> Ã¢â‚¬â€ Lettre de motivation personnalisÃƒÂ©e
+        ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â½ <strong>CV_optimisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©.docx</strong> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â CV adaptÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© pour cette offre<br>
+        ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â½ <strong>Lettre_motivation.docx</strong> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Lettre de motivation personnalisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e
       </p>
       <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-      <p style="color:#999; font-size:12px;">CV Optimizer Ã¢â‚¬â€ Internship Automation</p>
+      <p style="color:#999; font-size:12px;">CV Optimizer ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Internship Automation</p>
     </body></html>
     """
 
@@ -159,9 +159,9 @@ def send_offer_notification(
     try:
         with _build_smtp(gmail_address, gmail_app_password) as server:
             server.sendmail(gmail_address, to_email, msg.as_string())
-        logger.info(f"[Email] Notification envoyÃƒÂ©e pour {job['title']} chez {job['company']}")
+        logger.info(f"[Email] Notification envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e pour {job['title']} chez {job['company']}")
     except Exception as e:
-        logger.error(f"[Email] Ãƒâ€°chec envoi notification : {e}")
+        logger.error(f"[Email] ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°chec envoi notification : {e}")
 
 
 def send_daily_summary(
@@ -172,19 +172,19 @@ def send_daily_summary(
     date_str: str = None,
 ):
     """
-    Envoie un mail rÃƒÂ©capitulatif quotidien listant toutes les candidatures soumises.
+    Envoie un mail rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©capitulatif quotidien listant toutes les candidatures soumises.
     """
     from datetime import date
     if not date_str:
         date_str = date.today().strftime("%d/%m/%Y")
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"Ã¢Å“â€¦ RÃƒÂ©cap du jour Ã¢â‚¬â€ {len(applied_jobs)} candidatures envoyÃƒÂ©es ({date_str})"
+    msg = MIMEMultipart()
+    msg["Subject"] = f"ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©cap du jour ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â {len(applied_jobs)} candidatures envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es ({date_str})"
     msg["From"] = gmail_address
     msg["To"] = to_email
 
     rows = ""
-    for i, job in enumerate(applied_jobs, 1):
+    for i, item in enumerate(applied_jobs, 1):`n        job = item["job"] if isinstance(item, dict) and "job" in item else item
         bg = "#f5f5f5" if i % 2 == 0 else "#ffffff"
         rows += f"""
         <tr style="background:{bg};">
@@ -199,9 +199,9 @@ def send_daily_summary(
 
     html = f"""
     <html><body style="font-family: Arial, sans-serif; color: #333; max-width: 700px; margin: auto;">
-      <h2 style="color: #0a66c2;">Ã¢Å“â€¦ RÃƒÂ©capitulatif des candidatures Ã¢â‚¬â€ {date_str}</h2>
+      <h2 style="color: #0a66c2;">ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©capitulatif des candidatures ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â {date_str}</h2>
       <p style="font-size:16px;">
-        <strong>{len(applied_jobs)} candidatures</strong> ont ÃƒÂ©tÃƒÂ© soumises automatiquement aujourd'hui via LinkedIn Easy Apply.
+        <strong>{len(applied_jobs)} candidatures</strong> ont ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© soumises automatiquement aujourd'hui via LinkedIn Easy Apply.
       </p>
 
       <table style="width:100%; border-collapse:collapse; margin-top:15px;">
@@ -218,11 +218,11 @@ def send_daily_summary(
       </table>
 
       <p style="margin-top:20px; color:#666; font-size:13px;">
-        Toutes ces candidatures ont ÃƒÂ©tÃƒÂ© soumises avec ton CV et ta lettre de motivation personnalisÃƒÂ©s.<br>
-        Tu peux recevoir des rÃƒÂ©ponses directement sur <strong>sayidina.dicko@etu.univ-amu.fr</strong>.
+        Toutes ces candidatures ont ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© soumises avec ton CV et ta lettre de motivation personnalisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s.<br>
+        Tu peux recevoir des rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ponses directement sur <strong>sayidina.dicko@etu.univ-amu.fr</strong>.
       </p>
       <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-      <p style="color:#999; font-size:12px;">CV Optimizer Ã¢â‚¬â€ Internship Automation</p>
+      <p style="color:#999; font-size:12px;">CV Optimizer ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Internship Automation</p>
     </body></html>
     """
 
@@ -236,6 +236,6 @@ def send_daily_summary(
     try:
         with _build_smtp(gmail_address, gmail_app_password) as server:
             server.sendmail(gmail_address, to_email, msg.as_string())
-        logger.info(f"[Email] RÃƒÂ©capitulatif envoyÃƒÂ© : {len(applied_jobs)} candidatures.")
+        logger.info(f"[Email] RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©capitulatif envoyÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© : {len(applied_jobs)} candidatures.")
     except Exception as e:
-        logger.error(f"[Email] Ãƒâ€°chec envoi rÃƒÂ©capitulatif : {e}")
+        logger.error(f"[Email] ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°chec envoi rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©capitulatif : {e}")
