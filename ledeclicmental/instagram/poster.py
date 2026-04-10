@@ -13,7 +13,10 @@ Features :
 """
 from __future__ import annotations
 
+import base64
+import os
 import random
+import tempfile
 import time
 from pathlib import Path
 
@@ -61,7 +64,15 @@ def _build_caption(content: PostContent, audio: AudioTrack) -> str:
 
 
 def _get_client():
-    """Client instagrapi avec persistance de session."""
+    """
+    Client instagrapi avec persistance de session.
+
+    Priorité :
+      1. Variable d'env INSTAGRAM_SESSION_B64 (GitHub Actions / CI)
+         → charge la session sans re-login pour éviter le blocage IP
+      2. Fichier session local (exécution sur PC)
+      3. Login fresh (première exécution locale)
+    """
     try:
         from instagrapi import Client  # type: ignore
     except ImportError as exc:
@@ -71,16 +82,33 @@ def _get_client():
     session_file: Path = settings.instagram_session_file
     session_file.parent.mkdir(parents=True, exist_ok=True)
 
+    # ── Cas 1 : session encodée en base64 (CI/GitHub Actions) ────────────────
+    session_b64 = os.getenv("INSTAGRAM_SESSION_B64", "")
+    if session_b64:
+        try:
+            session_json = base64.b64decode(session_b64).decode("utf-8")
+            tmp = Path(tempfile.mktemp(suffix=".json"))
+            tmp.write_text(session_json, encoding="utf-8")
+            cl.load_settings(tmp)
+            tmp.unlink(missing_ok=True)
+            cl.get_timeline_feed()   # vérifie la session SANS re-login
+            logger.info("Session CI chargée depuis INSTAGRAM_SESSION_B64.")
+            return cl
+        except Exception as exc:
+            logger.warning("Session CI invalide (%s) — tentative login.", exc)
+
+    # ── Cas 2 : fichier session local ────────────────────────────────────────
     if session_file.exists():
         try:
             cl.load_settings(session_file)
             cl.login(settings.instagram_username, settings.instagram_password)
             cl.get_timeline_feed()
-            logger.info("Session Instagram chargée depuis %s", session_file)
+            logger.info("Session locale chargée depuis %s", session_file)
             return cl
         except Exception as exc:
-            logger.warning("Session invalide (%s) — reconnexion.", exc)
+            logger.warning("Session locale invalide (%s) — reconnexion.", exc)
 
+    # ── Cas 3 : login fresh ──────────────────────────────────────────────────
     logger.info("Connexion à Instagram en tant que @%s", settings.instagram_username)
     cl.login(settings.instagram_username, settings.instagram_password)
     cl.dump_settings(session_file)
