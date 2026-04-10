@@ -1,5 +1,5 @@
 """
-Bilingual post content generation via Claude API.
+Bilingual post content generation via Groq API (free tier).
 
 One API call generates French + English content simultaneously,
 ensuring thematic and tonal coherence between both languages.
@@ -10,7 +10,7 @@ import json
 import re
 from dataclasses import dataclass
 
-import anthropic
+from groq import Groq
 
 from ledeclicmental.config import settings
 from ledeclicmental.topics.trending import Topic
@@ -18,13 +18,13 @@ from ledeclicmental.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-_client: anthropic.Anthropic | None = None
+_client: Groq | None = None
 
 
-def _get_client() -> anthropic.Anthropic:
+def _get_client() -> Groq:
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        _client = Groq(api_key=settings.groq_api_key)
     return _client
 
 
@@ -74,7 +74,7 @@ Format de réponse OBLIGATOIRE : JSON valide uniquement, sans markdown ni backti
 
 def generate_post(topic: Topic, slot: str) -> PostContent:
     """
-    Call Claude to generate a bilingual Instagram post.
+    Call Groq (Llama 3.3 70B) to generate a bilingual Instagram post.
 
     Returns a PostContent dataclass with all text fields populated.
     """
@@ -105,26 +105,28 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
 }}
 """.strip()
 
-    logger.info("Calling Claude for topic='%s' slot='%s'", topic.keyword_fr, slot)
+    logger.info("Calling Groq for topic='%s' slot='%s'", topic.keyword_fr, slot)
 
-    response = _get_client().messages.create(
-        model=settings.claude_model,
+    response = _get_client().chat.completions.create(
+        model="llama-3.3-70b-versatile",
         max_tokens=1024,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
+        messages=[
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
     )
 
-    raw = response.content[0].text.strip()
+    raw = response.choices[0].message.content.strip()
 
-    # Strip markdown fences if Claude adds them despite instructions
+    # Strip markdown fences if the model adds them despite instructions
     raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
     raw = re.sub(r"\s*```$", "", raw, flags=re.MULTILINE)
 
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        logger.error("Claude returned invalid JSON: %s\nRaw: %s", exc, raw)
-        raise RuntimeError("Claude returned non-JSON content") from exc
+        logger.error("Groq returned invalid JSON: %s\nRaw: %s", exc, raw)
+        raise RuntimeError("Groq returned non-JSON content") from exc
 
     post = PostContent(
         topic=topic,

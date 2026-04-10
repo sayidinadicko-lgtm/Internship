@@ -39,9 +39,8 @@ class Settings:
     instagram_password: str
     instagram_session_file: Path
 
-    # Claude
-    anthropic_api_key: str
-    claude_model: str
+    # Groq
+    groq_api_key: str
 
     # Schedule
     post_times: list[tuple[int, int]]
@@ -64,8 +63,7 @@ def load_settings() -> Settings:
         instagram_username=_require("INSTAGRAM_USERNAME"),
         instagram_password=_require("INSTAGRAM_PASSWORD"),
         instagram_session_file=root / os.getenv("INSTAGRAM_SESSION_FILE", "data/session/instagram_session.json"),
-        anthropic_api_key=_require("ANTHROPIC_API_KEY"),
-        claude_model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
+        groq_api_key=_require("GROQ_API_KEY"),
         post_times=_parse_post_times(os.getenv("POST_TIMES", "07:00,12:30,19:00")),
         timezone=os.getenv("TIMEZONE", "Europe/Paris"),
         project_root=root,
