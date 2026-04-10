@@ -30,6 +30,16 @@ def _save(records: list[dict[str, Any]]) -> None:
     path.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def was_slot_posted_today(slot: str) -> bool:
+    """Retourne True si ce slot a déjà été publié aujourd'hui (UTC)."""
+    today = datetime.utcnow().date().isoformat()
+    for record in _load():
+        posted_date = record.get("posted_at", "")[:10]
+        if posted_date == today and record.get("slot") == slot:
+            return True
+    return False
+
+
 def was_topic_used_recently(keyword_fr: str, days: int = 14) -> bool:
     cutoff = datetime.utcnow() - timedelta(days=days)
     for record in _load():

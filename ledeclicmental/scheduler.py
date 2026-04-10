@@ -29,7 +29,12 @@ def run_post_job(slot: str) -> None:
         from ledeclicmental.content.audio import get_recommendation
         from ledeclicmental.image.renderer import render_post
         from ledeclicmental.instagram.poster import upload_post
-        from ledeclicmental.utils.history import record_post
+        from ledeclicmental.utils.history import record_post, was_slot_posted_today
+
+        # Garde-fou anti-doublon : ne pas republier si déjà fait aujourd'hui
+        if was_slot_posted_today(slot):
+            logger.info("Slot '%s' déjà publié aujourd'hui — ignoré.", slot)
+            return
 
         # Step 1: Topic
         topic = get_daily_topic()
