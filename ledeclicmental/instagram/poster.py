@@ -68,10 +68,9 @@ def _get_client():
     Client instagrapi avec persistance de session.
 
     Priorité :
-      1. Variable d'env INSTAGRAM_SESSION_B64 (GitHub Actions / CI)
-         → charge la session sans re-login pour éviter le blocage IP
-      2. Fichier session local (exécution sur PC)
-      3. Login fresh (première exécution locale)
+      1. Variable d'env INSTAGRAM_SESSION_B64 (CI/GitHub Actions)
+      2. Fichier session local — vérifié SANS re-login (get_timeline_feed)
+      3. Login fresh uniquement si la session est absente ou vraiment invalide
     """
     try:
         from instagrapi import Client  # type: ignore
@@ -91,24 +90,24 @@ def _get_client():
             tmp.write_text(session_json, encoding="utf-8")
             cl.load_settings(tmp)
             tmp.unlink(missing_ok=True)
-            cl.get_timeline_feed()   # vérifie la session SANS re-login
+            cl.get_timeline_feed()
             logger.info("Session CI chargée depuis INSTAGRAM_SESSION_B64.")
             return cl
         except Exception as exc:
-            logger.warning("Session CI invalide (%s) — tentative login.", exc)
+            logger.warning("Session CI invalide (%s).", exc)
 
-    # ── Cas 2 : fichier session local ────────────────────────────────────────
+    # ── Cas 2 : session locale — PAS de re-login, juste vérification ─────────
     if session_file.exists():
         try:
             cl.load_settings(session_file)
-            cl.login(settings.instagram_username, settings.instagram_password)
-            cl.get_timeline_feed()
-            logger.info("Session locale chargée depuis %s", session_file)
+            cl.get_timeline_feed()   # vérifie sans re-login
+            logger.info("Session locale valide — chargée depuis %s", session_file)
             return cl
         except Exception as exc:
-            logger.warning("Session locale invalide (%s) — reconnexion.", exc)
+            logger.warning("Session locale invalide (%s) — login fresh.", exc)
+            cl = Client()            # reset complet avant de re-login
 
-    # ── Cas 3 : login fresh ──────────────────────────────────────────────────
+    # ── Cas 3 : login fresh (première fois ou session expirée) ───────────────
     logger.info("Connexion à Instagram en tant que @%s", settings.instagram_username)
     cl.login(settings.instagram_username, settings.instagram_password)
     cl.dump_settings(session_file)
