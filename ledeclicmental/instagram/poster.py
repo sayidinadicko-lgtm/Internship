@@ -165,6 +165,25 @@ def interactive_login() -> None:
         )
         page = context.new_page()
         page.goto("https://www.instagram.com/accounts/login/", wait_until="networkidle")
+        time.sleep(2)
+
+        # Auto-dismiss cookie consent popup if present
+        for sel in (
+            'button:has-text("Decline optional cookies")',
+            'button:has-text("Refuser les cookies optionnels")',
+            'button:has-text("Only allow essential cookies")',
+            'button:has-text("Allow all cookies")',
+            'button:has-text("Autoriser tous les cookies")',
+        ):
+            try:
+                el = page.query_selector(sel)
+                if el:
+                    el.click()
+                    logger.info("Popup cookies fermee automatiquement.")
+                    time.sleep(1)
+                    break
+            except Exception:
+                pass
 
         logger.info("Navigateur ouvert — connectez-vous a Instagram (max 10 min).")
 
