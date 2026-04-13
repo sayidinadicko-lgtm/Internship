@@ -166,19 +166,29 @@ def interactive_login() -> None:
         page = context.new_page()
         page.goto("https://www.instagram.com/accounts/login/", wait_until="networkidle")
 
-        logger.info("Navigateur ouvert — en attente de la connexion manuelle (max 10 min).")
+        logger.info("Navigateur ouvert — connectez-vous a Instagram (max 10 min).")
 
-        # Wait until redirected away from /accounts/login/
-        try:
-            page.wait_for_function(
-                "!window.location.href.includes('/accounts/login')",
-                timeout=600_000,  # 10 minutes
-            )
-        except Exception as exc:
-            logger.warning("Timeout de connexion : %s", exc)
+        # Poll page.url in Python — avoids Instagram CSP blocking JS eval
+        deadline = time.time() + 600  # 10 minutes
+        logged_in = False
+        while time.time() < deadline:
+            try:
+                current_url = page.url
+            except Exception:
+                break
+            if (
+                current_url
+                and "/accounts/login" not in current_url
+                and "instagram.com" in current_url
+            ):
+                logged_in = True
+                break
+            time.sleep(2)
 
-        # Extra pause so all cookies are set
-        time.sleep(4)
+        if not logged_in:
+            logger.warning("Connexion non detectee apres 10 minutes.")
+
+        time.sleep(3)  # Let cookies settle
         _dismiss_popups(page)
         time.sleep(1)
 
@@ -186,7 +196,10 @@ def interactive_login() -> None:
         logger.info("Session sauvegardee dans %s", _STATE_FILE)
 
         browser.close()
-        print("\nConnexion reussie ! Session sauvegardee.\n")
+        if logged_in:
+            print("\nConnexion reussie ! Session sauvegardee.\n")
+        else:
+            print("\nConnexion non confirmee — relancez --login et connectez-vous dans le navigateur.\n")
 
 
 def _has_session() -> bool:
