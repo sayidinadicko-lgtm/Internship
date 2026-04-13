@@ -313,24 +313,24 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
             time.sleep(3)
             _screenshot(page, "debug_after_create.png")
 
-            # ── 2b. Click "Publication" in the create sub-menu (if visible) ─
-            # Only look inside dialog/popup elements to avoid matching feed content.
-            # In French Instagram: "Publication" (not "Post")
+            # ── 2b. Click "Publication" in the left nav sub-menu ────────────
+            # After clicking "Créer", Instagram expands the left nav with:
+            # Publication / Vidéo en direct / Publicité
+            # These items are in the nav sidebar, NOT in a dialog.
             for sel in (
-                '[role="dialog"] span:has-text("Publication")',
-                '[role="dialog"] span:has-text("Post")',
-                '[role="presentation"] span:has-text("Publication")',
-                '[role="presentation"] span:has-text("Post")',
-                # Floating panel (no specific role)
-                'div[style*="transform"] span:has-text("Publication")',
-                'div[style*="transform"] span:has-text("Post")',
+                'nav a:has-text("Publication")',
+                'nav span:has-text("Publication")',
+                'a:has-text("Publication")',
+                'span:has-text("Publication")',
+                'nav a:has-text("Post")',
+                'nav span:has-text("Post")',
             ):
                 try:
-                    el = page.wait_for_selector(sel, timeout=2_000)
+                    el = page.wait_for_selector(sel, timeout=3_000)
                     if el:
                         el.click()
-                        logger.info("'Publication' selectionne dans le menu.")
-                        time.sleep(2)
+                        logger.info("'Publication' clique dans la barre laterale.")
+                        time.sleep(3)
                         break
                 except Exception:
                     pass
