@@ -309,30 +309,34 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                 context.close()
                 return "ui_failed"
 
-            time.sleep(2)
+            # Screenshot immediately after clicking Create — debug what appeared
+            time.sleep(3)
+            _screenshot(page, "debug_after_create.png")
 
-            # ── 2b. Click "Post" in the create sub-menu (if present) ──────
-            # Instagram shows a menu: Post / Story / Reel / Live
+            # ── 2b. Click "Publication" in the create sub-menu (if visible) ─
+            # Only look inside dialog/popup elements to avoid matching feed content.
+            # In French Instagram: "Publication" (not "Post")
             for sel in (
-                'span:has-text("Post")',
-                'div[role="menuitem"]:has-text("Post")',
-                'button:has-text("Post")',
-                'span:has-text("Publication")',
-                'div[role="menuitem"]:has-text("Publication")',
+                '[role="dialog"] span:has-text("Publication")',
+                '[role="dialog"] span:has-text("Post")',
+                '[role="presentation"] span:has-text("Publication")',
+                '[role="presentation"] span:has-text("Post")',
+                # Floating panel (no specific role)
+                'div[style*="transform"] span:has-text("Publication")',
+                'div[style*="transform"] span:has-text("Post")',
             ):
                 try:
-                    el = page.wait_for_selector(sel, timeout=3_000)
+                    el = page.wait_for_selector(sel, timeout=2_000)
                     if el:
                         el.click()
-                        logger.info("'Post' selectionne dans le menu.")
+                        logger.info("'Publication' selectionne dans le menu.")
                         time.sleep(2)
                         break
                 except Exception:
                     pass
 
             # ── 3. Upload images ──────────────────────────────────────────
-            # Save a debug screenshot so we can see what the modal looks like
-            time.sleep(3)
+            time.sleep(2)
             _screenshot(page, "debug_before_upload.png")
 
             # Strategy A: set files directly on the hidden <input type="file">
