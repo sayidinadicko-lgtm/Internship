@@ -257,12 +257,18 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
         try:
             # ── 1. Navigate to Instagram ──────────────────────────────────
             page.goto("https://www.instagram.com/", wait_until="domcontentloaded", timeout=60_000)
-            time.sleep(2)
+
+            # Wait for React to fully render the left navigation
+            try:
+                page.wait_for_selector("nav", timeout=15_000)
+            except Exception:
+                pass
+            time.sleep(3)
 
             if "/accounts/login" in page.url:
                 logger.warning("Session expiree — re-connexion necessaire.")
                 context.close()
-                return False
+                return "session_expired"
 
             _dismiss_cookie_banner(page)
             _dismiss_popups(page)
@@ -273,17 +279,26 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
             for sel in (
                 'svg[aria-label="New post"]',
                 'svg[aria-label="Nouveau post"]',
+                'svg[aria-label="Créer"]',
                 '[aria-label="New post"]',
                 '[aria-label="Nouveau post"]',
+                '[aria-label="Create"]',
+                '[aria-label="Créer"]',
                 'span:has-text("Create")',
-                'span:has-text("Creer")',
+                'span:has-text("Créer")',
+                # Broader: any nav link containing an SVG (Create is usually last before Profile)
+                'nav svg[aria-label]',
             ):
                 try:
-                    el = page.wait_for_selector(sel, timeout=4_000)
+                    el = page.wait_for_selector(sel, timeout=3_000)
                     if el:
-                        el.click()
+                        # For SVG, click the parent clickable element
+                        parent = el.evaluate_handle(
+                            "el => el.closest('a, div[role=\"button\"], button') || el"
+                        )
+                        parent.as_element().click()
                         create_clicked = True
-                        logger.info("Bouton 'Create' clique.")
+                        logger.info("Bouton 'Create' clique via : %s", sel)
                         break
                 except Exception:
                     pass
@@ -292,7 +307,7 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                 logger.warning("Bouton Create introuvable — capture d'ecran.")
                 _screenshot(page, "error_create.png")
                 context.close()
-                return False
+                return "ui_failed"
 
             time.sleep(2)
 
@@ -382,7 +397,7 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                 logger.error("Impossible de cliquer sur 'Share'.")
                 _screenshot(page, "error_share.png")
                 context.close()
-                return False
+                return "ui_failed"
 
             # ── 9. Confirm ────────────────────────────────────────────────
             time.sleep(5)
@@ -404,13 +419,16 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                 logger.warning("Confirmation non detectee (post probablement publie).")
 
             context.close()
-            return True
+            return "ok"
 
         except Exception as exc:
             logger.error("Erreur inattendue : %s", exc)
             _screenshot(page, "error_unexpected.png")
-            context.close()
-            return False
+            try:
+                context.close()
+            except Exception:
+                pass
+            return "ui_failed"
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -437,14 +455,18 @@ def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack
 
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
-            success = _post_carousel(image_paths, caption)
-            if success:
+            result = _post_carousel(image_paths, caption)
+
+            if result == "ok":
                 logger.info("Publication reussie (tentative %d/%d).", attempt, _MAX_RETRIES)
                 return "BROWSER_POST_OK"
 
-            # Session expired
-            logger.info("Session expiree — re-connexion manuelle requise.")
-            interactive_login()
+            if result == "session_expired":
+                logger.info("Session expiree — re-connexion manuelle requise.")
+                interactive_login()
+            else:
+                # UI detection failed — just retry without re-login
+                logger.warning("Echec UI (tentative %d/%d) — nouvelle tentative.", attempt, _MAX_RETRIES)
 
         except Exception as exc:
             logger.error("Tentative %d/%d echouee : %s", attempt, _MAX_RETRIES, exc)
