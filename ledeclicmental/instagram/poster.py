@@ -183,9 +183,8 @@ def _screenshot(page, filename: str) -> None:
 # ── Session management ────────────────────────────────────────────────────────
 
 def _has_session() -> bool:
-    """True if a Chromium profile with cookies exists."""
-    cookie_db = _PROFILE_DIR / "Default" / "Cookies"
-    return cookie_db.exists()
+    """True if a Chromium profile directory exists with any content."""
+    return _PROFILE_DIR.exists() and any(_PROFILE_DIR.iterdir())
 
 
 def interactive_login() -> None:
@@ -208,7 +207,7 @@ def interactive_login() -> None:
         context = _launch_context(p, headless=False, slow_mo=50)
         page = context.new_page()
 
-        page.goto("https://www.instagram.com/accounts/login/", wait_until="networkidle")
+        page.goto("https://www.instagram.com/accounts/login/", wait_until="domcontentloaded", timeout=60_000)
 
         # Try to auto-dismiss cookie banner
         _dismiss_cookie_banner(page)
@@ -257,7 +256,7 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
 
         try:
             # ── 1. Navigate to Instagram ──────────────────────────────────
-            page.goto("https://www.instagram.com/", wait_until="networkidle", timeout=30_000)
+            page.goto("https://www.instagram.com/", wait_until="domcontentloaded", timeout=60_000)
             time.sleep(2)
 
             if "/accounts/login" in page.url:
