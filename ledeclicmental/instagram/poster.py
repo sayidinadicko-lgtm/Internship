@@ -311,13 +311,34 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
 
             time.sleep(2)
 
+            # ── 2b. Click "Post" in the create sub-menu (if present) ──────
+            # Instagram shows a menu: Post / Story / Reel / Live
+            for sel in (
+                'span:has-text("Post")',
+                'div[role="menuitem"]:has-text("Post")',
+                'button:has-text("Post")',
+                'span:has-text("Publication")',
+                'div[role="menuitem"]:has-text("Publication")',
+            ):
+                try:
+                    el = page.wait_for_selector(sel, timeout=3_000)
+                    if el:
+                        el.click()
+                        logger.info("'Post' selectionne dans le menu.")
+                        time.sleep(2)
+                        break
+                except Exception:
+                    pass
+
             # ── 3. Upload images via file chooser ─────────────────────────
-            with page.expect_file_chooser(timeout=12_000) as fc_info:
+            with page.expect_file_chooser(timeout=15_000) as fc_info:
                 for sel in (
                     'button:has-text("Select from computer")',
-                    "button:has-text(\"Selectionner sur l'ordinateur\")",
+                    "button:has-text(\"S\u00e9lectionner sur l'ordinateur\")",
                     'button:has-text("Select From Computer")',
                     'div[role="button"]:has-text("Select from computer")',
+                    'button:has-text("Importer depuis")',
+                    'button:has-text("Choisir")',
                 ):
                     try:
                         page.click(sel, timeout=4_000)
