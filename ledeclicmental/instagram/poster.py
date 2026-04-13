@@ -1,19 +1,17 @@
 """
-Instagram posting via Playwright browser automation.
+Instagram posting via Playwright browser automation (persistent Chromium profile).
 
 Flow:
-  First run (no saved session):
-    → Opens a visible Chromium browser
-    → User logs in to Instagram manually
-    → Browser state (cookies + localStorage) saved to disk
+  First run:
+    → Opens Chromium with a persistent profile (data/session/chromium_profile/)
+    → User logs in to Instagram manually (accepts cookies, enters credentials)
+    → Browser state saved automatically in the profile directory
     → Browser closes
 
-  Posting run (saved session found):
-    → Loads saved browser state
-    → Opens Chromium (visible) and navigates to Instagram
-    → Clicks "Create" → uploads carousel images via file picker
-    → Types caption → clicks "Share"
-    → Saves updated state, closes browser
+  Posting runs:
+    → Reuses the same persistent profile (already logged in, cookies intact)
+    → Navigates to Instagram, creates carousel post, publishes
+    → No re-login needed (session lasts weeks/months)
 
 To force a new manual login:
     python -m ledeclicmental --login
@@ -39,34 +37,30 @@ logger = get_logger(__name__)
 _MAX_RETRIES = 3
 _RETRY_BACKOFF = 60
 
-# Playwright browser state persisted between runs
-_STATE_FILE: Path = settings.data_dir / "session" / "playwright_state.json"
+# Persistent Chromium profile — survives between runs, stores cookies/session
+_PROFILE_DIR: Path = settings.data_dir / "session" / "chromium_profile"
+
+_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+_LAUNCH_ARGS = [
+    "--start-maximized",
+    "--disable-blink-features=AutomationControlled",
+    "--no-first-run",
+    "--no-default-browser-check",
+]
 
 
 # ── Caption builder ───────────────────────────────────────────────────────────
 
 def _build_caption(content: PostContent, audio: AudioTrack) -> str:
-    """
-    Assemble la légende complète du post Instagram.
-
-    Structure :
-      [Légende FR + CTA FR]
-
-      - - -
-
-      [Légende EN + CTA EN]
-
-      .
-      .
-      .
-      [30 hashtags]
-    """
     fr_block = f"{content.caption_fr}\n\n{content.cta_fr}"
     en_block = f"{content.caption_en}\n\n{content.cta_en}"
-
     tags = get_hashtags(content.topic.keyword_fr, content.slot)
     hashtag_line = format_hashtags(tags)
-
     return (
         f"{fr_block}\n\n"
         f"- - -\n\n"
@@ -79,16 +73,71 @@ def _build_caption(content: PostContent, audio: AudioTrack) -> str:
 # ── Playwright helpers ────────────────────────────────────────────────────────
 
 def _sync_playwright():
-    """Import and return sync_playwright (raises clear error if not installed)."""
     try:
         from playwright.sync_api import sync_playwright  # type: ignore
         return sync_playwright
     except ImportError as exc:
         raise RuntimeError(
-            "Playwright non installé. Lance :\n"
+            "Playwright non installe. Lance :\n"
             "  pip install playwright\n"
             "  python -m playwright install chromium"
         ) from exc
+
+
+def _launch_context(p, headless: bool = False, slow_mo: int = 80):
+    """
+    Launch a persistent Chromium context that saves all cookies/sessions
+    automatically to _PROFILE_DIR (like a real browser profile).
+    Returns a BrowserContext — call context.close() when done.
+    """
+    _PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    return p.chromium.launch_persistent_context(
+        str(_PROFILE_DIR),
+        headless=headless,
+        slow_mo=slow_mo,
+        args=_LAUNCH_ARGS,
+        viewport={"width": 1280, "height": 900},
+        user_agent=_USER_AGENT,
+    )
+
+
+def _dismiss_cookie_banner(page) -> None:
+    """Try to auto-dismiss Instagram's cookie consent popup."""
+    time.sleep(2)
+    candidates = [
+        "Decline optional cookies",
+        "Refuser les cookies optionnels",
+        "Only allow essential cookies",
+        "Allow all cookies",
+        "Autoriser tous les cookies",
+        "Tout autoriser",
+        "Accepter",
+        "Accept all",
+    ]
+    for text in candidates:
+        try:
+            btn = page.get_by_role("button", name=text, exact=False)
+            if btn.count() > 0:
+                btn.first.click()
+                logger.info("Popup cookies fermee : '%s'", text)
+                time.sleep(1)
+                return
+        except Exception:
+            pass
+
+    # Last resort: click the last button inside any cookie dialog
+    try:
+        for dialog_sel in ('[role="dialog"]', 'div[data-focus-lock-disabled]'):
+            dialog = page.query_selector(dialog_sel)
+            if dialog:
+                buttons = dialog.query_selector_all("button")
+                if buttons:
+                    buttons[-1].click()
+                    logger.info("Popup cookies fermee via dernier bouton du dialogue.")
+                    time.sleep(1)
+                    return
+    except Exception:
+        pass
 
 
 def _dismiss_popups(page) -> None:
@@ -103,7 +152,7 @@ def _dismiss_popups(page) -> None:
             pass
 
 
-def _click_next(page, context: str = "") -> None:
+def _click_next(page, label: str = "") -> None:
     """Click the 'Next / Suivant' button in the post-creation wizard."""
     for sel in (
         'div[role="button"]:has-text("Next")',
@@ -113,173 +162,123 @@ def _click_next(page, context: str = "") -> None:
     ):
         try:
             page.click(sel, timeout=8_000)
-            logger.info("'Next' cliqué (%s).", context)
+            logger.info("'Next' clique (%s).", label)
             return
         except Exception:
             pass
-    logger.warning("Bouton 'Next' introuvable (%s) — capture d'écran.", context)
-    _screenshot(page, f"error_next_{context.replace(' ', '_')}.png")
+    logger.warning("Bouton 'Next' introuvable (%s).", label)
+    _screenshot(page, f"error_next_{label.replace(' ', '_')}.png")
 
 
 def _screenshot(page, filename: str) -> None:
-    """Save a debug screenshot to the data directory."""
     try:
         path = settings.data_dir / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(path))
-        logger.info("Capture d'écran : %s", path)
+        logger.info("Capture d'ecran : %s", path)
     except Exception:
         pass
 
 
 # ── Session management ────────────────────────────────────────────────────────
 
+def _has_session() -> bool:
+    """True if a Chromium profile with cookies exists."""
+    cookie_db = _PROFILE_DIR / "Default" / "Cookies"
+    return cookie_db.exists()
+
+
 def interactive_login() -> None:
     """
     Open a visible Chromium browser so the user can log in to Instagram manually.
-    Once the home feed is detected, saves browser state and closes.
+    The session is persisted automatically in the Chromium profile directory.
 
     Called via:  python -m ledeclicmental --login
     """
     sync_playwright = _sync_playwright()
-    _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     print("\n" + "=" * 60)
     print("  CONNEXION INSTAGRAM — Navigateur en cours d'ouverture...")
-    print("  Connectez-vous normalement, puis attendez.")
+    print("  1. Acceptez ou refusez les cookies Instagram")
+    print("  2. Connectez-vous avec votre email et mot de passe")
+    print("  3. Le navigateur se fermera automatiquement")
     print("=" * 60 + "\n")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            slow_mo=50,
-            args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
-        )
-        context = browser.new_context(
-            viewport={"width": 1280, "height": 900},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-        )
+        context = _launch_context(p, headless=False, slow_mo=50)
         page = context.new_page()
+
         page.goto("https://www.instagram.com/accounts/login/", wait_until="networkidle")
-        time.sleep(2)
 
-        # Auto-dismiss cookie consent popup if present
-        for sel in (
-            'button:has-text("Decline optional cookies")',
-            'button:has-text("Refuser les cookies optionnels")',
-            'button:has-text("Only allow essential cookies")',
-            'button:has-text("Allow all cookies")',
-            'button:has-text("Autoriser tous les cookies")',
-        ):
-            try:
-                el = page.query_selector(sel)
-                if el:
-                    el.click()
-                    logger.info("Popup cookies fermee automatiquement.")
-                    time.sleep(1)
-                    break
-            except Exception:
-                pass
+        # Try to auto-dismiss cookie banner
+        _dismiss_cookie_banner(page)
 
-        logger.info("Navigateur ouvert — connectez-vous a Instagram (max 10 min).")
+        logger.info("Navigateur ouvert — en attente de connexion (max 10 min).")
 
-        # Poll page.url in Python — avoids Instagram CSP blocking JS eval
-        deadline = time.time() + 600  # 10 minutes
+        # Poll page.url — no JS eval needed (avoids CSP issues)
+        deadline = time.time() + 600
         logged_in = False
         while time.time() < deadline:
             try:
-                current_url = page.url
+                url = page.url
             except Exception:
                 break
-            if (
-                current_url
-                and "/accounts/login" not in current_url
-                and "instagram.com" in current_url
-            ):
+            if url and "/accounts/login" not in url and "instagram.com" in url:
                 logged_in = True
                 break
             time.sleep(2)
 
-        if not logged_in:
-            logger.warning("Connexion non detectee apres 10 minutes.")
+        if logged_in:
+            time.sleep(3)
+            _dismiss_popups(page)
+            time.sleep(1)
+            logger.info("Connexion detectee — profil sauvegarde dans %s", _PROFILE_DIR)
 
-        time.sleep(3)  # Let cookies settle
-        _dismiss_popups(page)
-        time.sleep(1)
+        context.close()
 
-        context.storage_state(path=str(_STATE_FILE))
-        logger.info("Session sauvegardee dans %s", _STATE_FILE)
-
-        browser.close()
         if logged_in:
             print("\nConnexion reussie ! Session sauvegardee.\n")
         else:
-            print("\nConnexion non confirmee — relancez --login et connectez-vous dans le navigateur.\n")
-
-
-def _has_session() -> bool:
-    return _STATE_FILE.exists() and _STATE_FILE.stat().st_size > 100
+            print("\nConnexion non confirmee. Relancez --login et connectez-vous.\n")
 
 
 # ── Post automation ───────────────────────────────────────────────────────────
 
 def _post_carousel(image_paths: list[Path], caption: str) -> bool:
     """
-    Automate carousel (album) upload via Instagram web UI.
+    Automate carousel upload via Instagram web UI using the persistent profile.
     Returns True on success, False if session expired or flow fails.
     """
     sync_playwright = _sync_playwright()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            slow_mo=80,
-            args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
-        )
-        context = browser.new_context(
-            storage_state=str(_STATE_FILE),
-            viewport={"width": 1280, "height": 900},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-        )
+        context = _launch_context(p, headless=False, slow_mo=80)
         page = context.new_page()
 
         try:
-            # ── 1. Navigate to Instagram home ─────────────────────────────
+            # ── 1. Navigate to Instagram ──────────────────────────────────
             page.goto("https://www.instagram.com/", wait_until="networkidle", timeout=30_000)
             time.sleep(2)
 
-            # Check session validity
             if "/accounts/login" in page.url:
                 logger.warning("Session expiree — re-connexion necessaire.")
-                browser.close()
-                _STATE_FILE.unlink(missing_ok=True)
+                context.close()
                 return False
 
+            _dismiss_cookie_banner(page)
             _dismiss_popups(page)
             time.sleep(1)
 
-            # ── 2. Click the "Create / Nouveau post" button ───────────────
+            # ── 2. Click "Create / Nouveau post" ─────────────────────────
             create_clicked = False
-            create_selectors = [
-                # SVG aria-label in the left nav
+            for sel in (
                 'svg[aria-label="New post"]',
                 'svg[aria-label="Nouveau post"]',
-                # Wrapper elements
                 '[aria-label="New post"]',
                 '[aria-label="Nouveau post"]',
-                # Text-based button
                 'span:has-text("Create")',
-                'span:has-text("Créer")',
-            ]
-            for sel in create_selectors:
+                'span:has-text("Creer")',
+            ):
                 try:
                     el = page.wait_for_selector(sel, timeout=4_000)
                     if el:
@@ -291,30 +290,18 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                     pass
 
             if not create_clicked:
-                # Fallback: click the nav item that contains the "+" SVG
-                page.evaluate("""() => {
-                    const svgs = document.querySelectorAll('svg');
-                    for (const svg of svgs) {
-                        const label = svg.getAttribute('aria-label') || '';
-                        if (label.toLowerCase().includes('post') ||
-                            label.toLowerCase().includes('creat') ||
-                            label.toLowerCase().includes('nouveau')) {
-                            svg.closest('a, div[role="button"], button')?.click();
-                            return;
-                        }
-                    }
-                }""")
-                time.sleep(1)
-                logger.info("Create clique via fallback JS.")
+                logger.warning("Bouton Create introuvable — capture d'ecran.")
+                _screenshot(page, "error_create.png")
+                context.close()
+                return False
 
             time.sleep(2)
 
-            # ── 3. Select images via file chooser ─────────────────────────
-            # "Select from computer" button opens a file input
+            # ── 3. Upload images via file chooser ─────────────────────────
             with page.expect_file_chooser(timeout=12_000) as fc_info:
                 for sel in (
                     'button:has-text("Select from computer")',
-                    "button:has-text(\"Sélectionner sur l'ordinateur\")",
+                    "button:has-text(\"Selectionner sur l'ordinateur\")",
                     'button:has-text("Select From Computer")',
                     'div[role="button"]:has-text("Select from computer")',
                 ):
@@ -325,18 +312,12 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                         pass
 
             file_chooser = fc_info.value
-            # Selecting multiple files at once creates a carousel on Instagram
-            file_chooser.set_files([str(p) for p in image_paths])
-            logger.info("Images selectionnees : %s", [p.name for p in image_paths])
+            file_chooser.set_files([str(img) for img in image_paths])
+            logger.info("Images selectionnees : %s", [img.name for img in image_paths])
             time.sleep(3)
 
-            # ── 4. Handle optional "OK / Crop" confirmation ───────────────
-            # Instagram may ask to crop to square or keep original aspect ratio
-            for sel in (
-                'button:has-text("OK")',
-                'button:has-text("Original")',
-                "button:has-text(\"Sélectionner tout\")",
-            ):
+            # ── 4. Dismiss crop / aspect ratio dialog ─────────────────────
+            for sel in ('button:has-text("OK")', 'button:has-text("Original")'):
                 try:
                     el = page.query_selector(sel)
                     if el:
@@ -345,22 +326,20 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                         break
                 except Exception:
                     pass
-
             time.sleep(2)
 
-            # ── 5. "Next" — past crop / aspect-ratio screen ───────────────
-            _click_next(page, "crop screen")
+            # ── 5. Next (crop screen) ─────────────────────────────────────
+            _click_next(page, "crop")
             time.sleep(2)
 
-            # ── 6. "Next" — past filter / edit screen ────────────────────
-            _click_next(page, "filter screen")
+            # ── 6. Next (filter screen) ───────────────────────────────────
+            _click_next(page, "filter")
             time.sleep(2)
 
-            # ── 7. Type caption ───────────────────────────────────────────
+            # ── 7. Caption ────────────────────────────────────────────────
             caption_el = None
             for sel in (
                 'div[aria-label="Write a caption..."]',
-                "div[aria-label=\"Écrivez une légende…\"]",
                 'div[aria-label*="caption"]',
                 'div[role="textbox"]',
                 'textarea[aria-label*="caption"]',
@@ -375,28 +354,16 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
             if caption_el:
                 caption_el.click()
                 time.sleep(0.5)
-                # Inject text via execCommand (fast, works in Chromium)
-                page.evaluate(
-                    """(text) => {
-                        const el =
-                            document.querySelector('div[role="textbox"]') ||
-                            document.querySelector('div[aria-label*="caption"]') ||
-                            document.querySelector('textarea');
-                        if (!el) return;
-                        el.focus();
-                        document.execCommand('selectAll', false, null);
-                        document.execCommand('insertText', false, text);
-                    }""",
-                    caption,
-                )
+                page.keyboard.press("Control+a")
+                page.keyboard.type(caption, delay=5)
                 logger.info("Legende saisie (%d caracteres).", len(caption))
             else:
-                logger.warning("Zone de legende introuvable — post sans legende.")
+                logger.warning("Zone de legende introuvable.")
                 _screenshot(page, "error_caption.png")
 
             time.sleep(2)
 
-            # ── 8. Click "Share / Partager" ───────────────────────────────
+            # ── 8. Share ──────────────────────────────────────────────────
             shared = False
             for sel in (
                 'div[role="button"]:has-text("Share")',
@@ -415,38 +382,35 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
             if not shared:
                 logger.error("Impossible de cliquer sur 'Share'.")
                 _screenshot(page, "error_share.png")
-                browser.close()
+                context.close()
                 return False
 
-            # ── 9. Wait for confirmation ──────────────────────────────────
+            # ── 9. Confirm ────────────────────────────────────────────────
             time.sleep(5)
+            confirmed = False
             for sel in (
-                'text=Your post has been shared',
-                'text=Votre publication a ete partagee',
-                'text=Post shared',
                 'span:has-text("Your post has been shared")',
+                'span:has-text("Post shared")',
+                'span:has-text("Votre publication")',
             ):
                 try:
                     page.wait_for_selector(sel, timeout=20_000)
                     logger.info("Publication confirmee !")
+                    confirmed = True
                     break
                 except Exception:
                     pass
-            else:
-                # No confirmation found — still likely published; log warning
-                logger.warning(
-                    "Confirmation non detectee (le post a probablement ete publie)."
-                )
 
-            # Save refreshed cookies
-            context.storage_state(path=str(_STATE_FILE))
-            browser.close()
+            if not confirmed:
+                logger.warning("Confirmation non detectee (post probablement publie).")
+
+            context.close()
             return True
 
         except Exception as exc:
-            logger.error("Erreur inattendue lors du post browser : %s", exc)
+            logger.error("Erreur inattendue : %s", exc)
             _screenshot(page, "error_unexpected.png")
-            browser.close()
+            context.close()
             return False
 
 
@@ -454,10 +418,8 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
 
 def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack) -> str:
     """
-    Publie un carousel sur Instagram via Playwright.
-
-    image_paths : [slide_fr.jpg, slide_en.jpg]
-    Retourne "BROWSER_POST_OK" (ou "DRY_RUN_MEDIA_ID" en mode DRY_RUN).
+    Publie un carousel sur Instagram via Playwright (profil persistant).
+    Retourne "BROWSER_POST_OK" ou "DRY_RUN_MEDIA_ID".
     """
     caption = _build_caption(content, audio)
 
@@ -466,12 +428,10 @@ def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack
         logger.info("[DRY RUN] Legende (300 premiers caracteres) :\n%s", caption[:300])
         return "DRY_RUN_MEDIA_ID"
 
-    # Ensure we have a saved session
     if not _has_session():
-        logger.info("Aucune session Playwright — ouverture du navigateur pour connexion manuelle.")
+        logger.info("Aucun profil Chromium — ouverture pour connexion manuelle.")
         interactive_login()
 
-    # Anti-bot delay
     delay = random.uniform(10, 30)
     logger.info("Attente de %.0f secondes avant publication...", delay)
     time.sleep(delay)
@@ -479,15 +439,13 @@ def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
             success = _post_carousel(image_paths, caption)
-
             if success:
                 logger.info("Publication reussie (tentative %d/%d).", attempt, _MAX_RETRIES)
                 return "BROWSER_POST_OK"
 
-            # _post_carousel returned False → session expired, re-login
-            if not _has_session():
-                logger.info("Session expiree — re-connexion manuelle requise.")
-                interactive_login()
+            # Session expired
+            logger.info("Session expiree — re-connexion manuelle requise.")
+            interactive_login()
 
         except Exception as exc:
             logger.error("Tentative %d/%d echouee : %s", attempt, _MAX_RETRIES, exc)
