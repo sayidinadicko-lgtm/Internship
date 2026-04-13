@@ -6,6 +6,7 @@ Modes :
   python -m ledeclicmental --post-now    -> 1 post immédiat (slot auto selon heure)
   python -m ledeclicmental --slot morning|midday|evening -> 1 post immédiat (slot forcé)
   python -m ledeclicmental --catch-up    -> rattrape tous les slots manqués aujourd'hui
+  python -m ledeclicmental --login       -> ouvre le navigateur pour (re)connexion manuelle
 """
 from __future__ import annotations
 
@@ -73,9 +74,17 @@ def main() -> None:
         action="store_true",
         help="Rattrape tous les slots manqués aujourd'hui puis quitte",
     )
+    parser.add_argument(
+        "--login",
+        action="store_true",
+        help="Ouvre un navigateur pour (re)connexion manuelle à Instagram puis quitte",
+    )
     args = parser.parse_args()
 
-    if args.catch_up:
+    if args.login:
+        from ledeclicmental.instagram.poster import interactive_login
+        interactive_login()
+    elif args.catch_up:
         _catch_up()
     elif args.post_now or args.slot:
         from ledeclicmental.scheduler import run_post_job

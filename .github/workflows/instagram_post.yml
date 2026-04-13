@@ -1,64 +1,24 @@
 name: Instagram Auto Post — @ledeclicmental
 
-on:
-  schedule:
-    # 3 posts/jour (heures UTC — ajustées pour Paris)
-    - cron: '0 6 * * *'      # 08:00 Paris (heure d'été) / 07:00 (heure d'hiver)
-    - cron: '30 10 * * *'    # 12:30 Paris (heure d'été) / 11:30 (heure d'hiver)
-    - cron: '0 17 * * *'     # 19:00 Paris (heure d'été) / 18:00 (heure d'hiver)
+# NOTE: This workflow is DISABLED — Instagram blocks GitHub Actions datacenter IPs.
+# The bot runs locally on your PC via the Windows Startup VBScript.
+# Keep this file for reference only.
 
-  # Lancement manuel depuis GitHub (onglet Actions)
+on:
   workflow_dispatch:
     inputs:
-      slot:
-        description: 'Slot à publier (morning / midday / evening)'
+      note:
+        description: 'Ce workflow est desactive (Instagram bloque les IPs GitHub Actions). Utilisez le bot local.'
         required: false
-        default: 'morning'
-        type: choice
-        options:
-          - morning
-          - midday
-          - evening
+        default: 'info'
 
 jobs:
-  post:
+  info:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
-
-      - name: Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Installation des dependances
-        run: pip install -r requirements.txt
-
-      - name: Police Copperplate (depuis assets ou fallback)
+      - name: Notice
         run: |
-          mkdir -p assets/fonts
-          if [ ! -f "assets/fonts/COPRGTB.TTF" ]; then
-            echo "Police absente — telechargement de Cinzel Bold (alternative gratuite)"
-            curl -sL \
-              "https://github.com/google/fonts/raw/main/ofl/cinzel/static/Cinzel-Bold.ttf" \
-              -o assets/fonts/COPRGTB.TTF || echo "Telechargement echoue — fallback DejaVu"
-          else
-            echo "Police COPRGTB.TTF trouvee dans assets/fonts"
-          fi
-
-      - name: Publication Instagram
-        env:
-          INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
-          INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
-          INSTAGRAM_SESSION_B64: ${{ secrets.INSTAGRAM_SESSION_B64 }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: |
-          if [ -n "${{ github.event.inputs.slot }}" ]; then
-            python -m ledeclicmental --slot ${{ github.event.inputs.slot }}
-          else
-            python -m ledeclicmental --post-now
-          fi
+          echo "Ce workflow est desactive."
+          echo "Le bot Instagram tourne localement sur votre PC Windows."
+          echo "Lancez : python -m ledeclicmental --login  (premiere connexion)"
+          echo "Puis   : python -m ledeclicmental           (scheduler 3x/jour)"

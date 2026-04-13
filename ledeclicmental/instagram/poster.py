@@ -1,22 +1,30 @@
 """
-Instagram posting via instagrapi — carousel (album) FR + EN.
+Instagram posting via Playwright browser automation.
 
-Chaque post = carousel 2 slides :
-  Slide 1 : citation en français
-  Slide 2 : citation en anglais
+Flow:
+  First run (no saved session):
+    → Opens a visible Chromium browser
+    → User logs in to Instagram manually
+    → Browser state (cookies + localStorage) saved to disk
+    → Browser closes
 
-Features :
-- Persistance de session (évite les re-logins)
-- 3 tentatives avec back-off 60s
-- Délai aléatoire 30–90s avant upload (comportement humain)
-- Mode DRY_RUN (simulation sans publication)
+  Posting run (saved session found):
+    → Loads saved browser state
+    → Opens Chromium (visible) and navigates to Instagram
+    → Clicks "Create" → uploads carousel images via file picker
+    → Types caption → clicks "Share"
+    → Saves updated state, closes browser
+
+To force a new manual login:
+    python -m ledeclicmental --login
+
+Requirements:
+    pip install playwright
+    python -m playwright install chromium
 """
 from __future__ import annotations
 
-import base64
-import os
 import random
-import tempfile
 import time
 from pathlib import Path
 
@@ -31,6 +39,11 @@ logger = get_logger(__name__)
 _MAX_RETRIES = 3
 _RETRY_BACKOFF = 60
 
+# Playwright browser state persisted between runs
+_STATE_FILE: Path = settings.data_dir / "session" / "playwright_state.json"
+
+
+# ── Caption builder ───────────────────────────────────────────────────────────
 
 def _build_caption(content: PostContent, audio: AudioTrack) -> str:
     """
@@ -63,160 +76,392 @@ def _build_caption(content: PostContent, audio: AudioTrack) -> str:
     )
 
 
-def _get_client():
-    """
-    Client instagrapi avec persistance de session.
+# ── Playwright helpers ────────────────────────────────────────────────────────
 
-    Priorité :
-      1. Variable d'env INSTAGRAM_SESSION_B64 (CI/GitHub Actions)
-      2. Fichier session local — chargé directement SANS vérification
-         (évite les appels API bloqués par Instagram)
-      3. Login via session ID web (INSTAGRAM_SESSION_ID env var)
-      4. Login fresh en dernier recours
-    """
+def _sync_playwright():
+    """Import and return sync_playwright (raises clear error if not installed)."""
     try:
-        from instagrapi import Client  # type: ignore
+        from playwright.sync_api import sync_playwright  # type: ignore
+        return sync_playwright
     except ImportError as exc:
-        raise RuntimeError("Installe instagrapi : pip install instagrapi") from exc
+        raise RuntimeError(
+            "Playwright non installé. Lance :\n"
+            "  pip install playwright\n"
+            "  python -m playwright install chromium"
+        ) from exc
 
-    cl = Client()
-    session_file: Path = settings.instagram_session_file
-    session_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # ── Cas 1 : session base64 (CI) ──────────────────────────────────────────
-    session_b64 = os.getenv("INSTAGRAM_SESSION_B64", "")
-    if session_b64:
+def _dismiss_popups(page) -> None:
+    """Dismiss Instagram's 'Not Now' popups (notifications, save info, etc.)."""
+    for text in ("Not Now", "Pas maintenant", "Not now"):
         try:
-            session_json = base64.b64decode(session_b64).decode("utf-8")
-            tmp = Path(tempfile.mktemp(suffix=".json"))
-            tmp.write_text(session_json, encoding="utf-8")
-            cl.load_settings(tmp)
-            tmp.unlink(missing_ok=True)
-            logger.info("Session CI chargée depuis INSTAGRAM_SESSION_B64.")
-            return cl
-        except Exception as exc:
-            logger.warning("Session CI invalide (%s).", exc)
+            btn = page.query_selector(f'button:has-text("{text}")')
+            if btn:
+                btn.click()
+                time.sleep(0.5)
+        except Exception:
+            pass
 
-    # ── Cas 2 : session locale — chargée directement sans vérification ───────
-    if session_file.exists():
+
+def _click_next(page, context: str = "") -> None:
+    """Click the 'Next / Suivant' button in the post-creation wizard."""
+    for sel in (
+        'div[role="button"]:has-text("Next")',
+        'div[role="button"]:has-text("Suivant")',
+        'button:has-text("Next")',
+        'button:has-text("Suivant")',
+    ):
         try:
-            cl.load_settings(session_file)
-            logger.info("Session locale chargée depuis %s", session_file)
-            return cl
-        except Exception as exc:
-            logger.warning("Impossible de charger la session (%s).", exc)
-            cl = Client()
-
-    # ── Cas 3 : login via session ID web ─────────────────────────────────────
-    session_id = os.getenv("INSTAGRAM_SESSION_ID", "")
-    if session_id:
-        try:
-            cl.login_by_sessionid(session_id)
-            cl.dump_settings(session_file)
-            logger.info("Session créée via INSTAGRAM_SESSION_ID.")
-            return cl
-        except Exception as exc:
-            logger.warning("login_by_sessionid échoué (%s).", exc)
-            cl = Client()
-
-    # ── Cas 4 : login fresh ──────────────────────────────────────────────────
-    logger.info("Connexion à Instagram en tant que @%s", settings.instagram_username)
-    cl.login(settings.instagram_username, settings.instagram_password)
-    cl.dump_settings(session_file)
-    logger.info("Session sauvegardée dans %s", session_file)
-    return cl
+            page.click(sel, timeout=8_000)
+            logger.info("'Next' cliqué (%s).", context)
+            return
+        except Exception:
+            pass
+    logger.warning("Bouton 'Next' introuvable (%s) — capture d'écran.", context)
+    _screenshot(page, f"error_next_{context.replace(' ', '_')}.png")
 
 
-def _post_story(cl, image_path: Path, content: PostContent) -> None:
-    """
-    Publie la slide FR en Story juste après le carousel.
-    Non bloquant : un échec ici ne stoppe pas le pipeline.
-    """
+def _screenshot(page, filename: str) -> None:
+    """Save a debug screenshot to the data directory."""
     try:
-        delay = random.uniform(10, 25)
-        logger.info("Story : attente %.0fs avant publication…", delay)
-        time.sleep(delay)
-        cl.photo_upload_to_story(path=str(image_path))
-        logger.info("Story publiée avec succès.")
-    except Exception as exc:
-        logger.warning("Story non publiée (non bloquant) : %s", exc)
+        path = settings.data_dir / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(path))
+        logger.info("Capture d'écran : %s", path)
+    except Exception:
+        pass
 
 
-def _post_first_comment(cl, media_id: str, content: PostContent) -> None:
+# ── Session management ────────────────────────────────────────────────────────
+
+def interactive_login() -> None:
     """
-    Poste un premier commentaire pour stimuler l'engagement.
-    Posté 15-30s après la publication pour paraître organique.
+    Open a visible Chromium browser so the user can log in to Instagram manually.
+    Once the home feed is detected, saves browser state and closes.
+
+    Called via:  python -m ledeclicmental --login
     """
-    try:
-        delay = random.uniform(15, 30)
-        logger.info("Commentaire : attente %.0fs…", delay)
-        time.sleep(delay)
-        comment = (
-            f"Swipe pour lire la version EN >> "
-            f"Slide to read the FR version \u2764\ufe0f\u200d\U0001f525 "
-            f"| Sauvegarde ce post si \u00e7a t\u2019a parl\u00e9 ! "
-            f"Save this if it resonated with you!"
+    sync_playwright = _sync_playwright()
+    _STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    print("\n" + "=" * 60)
+    print("  CONNEXION INSTAGRAM — Navigateur en cours d'ouverture...")
+    print("  Connectez-vous normalement, puis attendez.")
+    print("=" * 60 + "\n")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=False,
+            slow_mo=50,
+            args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
         )
-        cl.media_comment(media_id, comment)
-        logger.info("Premier commentaire post\u00e9.")
-    except Exception as exc:
-        logger.warning("Commentaire non post\u00e9 (non bloquant) : %s", exc)
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+        )
+        page = context.new_page()
+        page.goto("https://www.instagram.com/accounts/login/", wait_until="networkidle")
 
+        logger.info("Navigateur ouvert — en attente de la connexion manuelle (max 10 min).")
+
+        # Wait until redirected away from /accounts/login/
+        try:
+            page.wait_for_function(
+                "!window.location.href.includes('/accounts/login')",
+                timeout=600_000,  # 10 minutes
+            )
+        except Exception as exc:
+            logger.warning("Timeout de connexion : %s", exc)
+
+        # Extra pause so all cookies are set
+        time.sleep(4)
+        _dismiss_popups(page)
+        time.sleep(1)
+
+        context.storage_state(path=str(_STATE_FILE))
+        logger.info("Session sauvegardee dans %s", _STATE_FILE)
+
+        browser.close()
+        print("\nConnexion reussie ! Session sauvegardee.\n")
+
+
+def _has_session() -> bool:
+    return _STATE_FILE.exists() and _STATE_FILE.stat().st_size > 100
+
+
+# ── Post automation ───────────────────────────────────────────────────────────
+
+def _post_carousel(image_paths: list[Path], caption: str) -> bool:
+    """
+    Automate carousel (album) upload via Instagram web UI.
+    Returns True on success, False if session expired or flow fails.
+    """
+    sync_playwright = _sync_playwright()
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=False,
+            slow_mo=80,
+            args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
+        )
+        context = browser.new_context(
+            storage_state=str(_STATE_FILE),
+            viewport={"width": 1280, "height": 900},
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+        )
+        page = context.new_page()
+
+        try:
+            # ── 1. Navigate to Instagram home ─────────────────────────────
+            page.goto("https://www.instagram.com/", wait_until="networkidle", timeout=30_000)
+            time.sleep(2)
+
+            # Check session validity
+            if "/accounts/login" in page.url:
+                logger.warning("Session expiree — re-connexion necessaire.")
+                browser.close()
+                _STATE_FILE.unlink(missing_ok=True)
+                return False
+
+            _dismiss_popups(page)
+            time.sleep(1)
+
+            # ── 2. Click the "Create / Nouveau post" button ───────────────
+            create_clicked = False
+            create_selectors = [
+                # SVG aria-label in the left nav
+                'svg[aria-label="New post"]',
+                'svg[aria-label="Nouveau post"]',
+                # Wrapper elements
+                '[aria-label="New post"]',
+                '[aria-label="Nouveau post"]',
+                # Text-based button
+                'span:has-text("Create")',
+                'span:has-text("Créer")',
+            ]
+            for sel in create_selectors:
+                try:
+                    el = page.wait_for_selector(sel, timeout=4_000)
+                    if el:
+                        el.click()
+                        create_clicked = True
+                        logger.info("Bouton 'Create' clique.")
+                        break
+                except Exception:
+                    pass
+
+            if not create_clicked:
+                # Fallback: click the nav item that contains the "+" SVG
+                page.evaluate("""() => {
+                    const svgs = document.querySelectorAll('svg');
+                    for (const svg of svgs) {
+                        const label = svg.getAttribute('aria-label') || '';
+                        if (label.toLowerCase().includes('post') ||
+                            label.toLowerCase().includes('creat') ||
+                            label.toLowerCase().includes('nouveau')) {
+                            svg.closest('a, div[role="button"], button')?.click();
+                            return;
+                        }
+                    }
+                }""")
+                time.sleep(1)
+                logger.info("Create clique via fallback JS.")
+
+            time.sleep(2)
+
+            # ── 3. Select images via file chooser ─────────────────────────
+            # "Select from computer" button opens a file input
+            with page.expect_file_chooser(timeout=12_000) as fc_info:
+                for sel in (
+                    'button:has-text("Select from computer")',
+                    "button:has-text(\"Sélectionner sur l'ordinateur\")",
+                    'button:has-text("Select From Computer")',
+                    'div[role="button"]:has-text("Select from computer")',
+                ):
+                    try:
+                        page.click(sel, timeout=4_000)
+                        break
+                    except Exception:
+                        pass
+
+            file_chooser = fc_info.value
+            # Selecting multiple files at once creates a carousel on Instagram
+            file_chooser.set_files([str(p) for p in image_paths])
+            logger.info("Images selectionnees : %s", [p.name for p in image_paths])
+            time.sleep(3)
+
+            # ── 4. Handle optional "OK / Crop" confirmation ───────────────
+            # Instagram may ask to crop to square or keep original aspect ratio
+            for sel in (
+                'button:has-text("OK")',
+                'button:has-text("Original")',
+                "button:has-text(\"Sélectionner tout\")",
+            ):
+                try:
+                    el = page.query_selector(sel)
+                    if el:
+                        el.click()
+                        time.sleep(1)
+                        break
+                except Exception:
+                    pass
+
+            time.sleep(2)
+
+            # ── 5. "Next" — past crop / aspect-ratio screen ───────────────
+            _click_next(page, "crop screen")
+            time.sleep(2)
+
+            # ── 6. "Next" — past filter / edit screen ────────────────────
+            _click_next(page, "filter screen")
+            time.sleep(2)
+
+            # ── 7. Type caption ───────────────────────────────────────────
+            caption_el = None
+            for sel in (
+                'div[aria-label="Write a caption..."]',
+                "div[aria-label=\"Écrivez une légende…\"]",
+                'div[aria-label*="caption"]',
+                'div[role="textbox"]',
+                'textarea[aria-label*="caption"]',
+            ):
+                try:
+                    caption_el = page.wait_for_selector(sel, timeout=6_000)
+                    if caption_el:
+                        break
+                except Exception:
+                    pass
+
+            if caption_el:
+                caption_el.click()
+                time.sleep(0.5)
+                # Inject text via execCommand (fast, works in Chromium)
+                page.evaluate(
+                    """(text) => {
+                        const el =
+                            document.querySelector('div[role="textbox"]') ||
+                            document.querySelector('div[aria-label*="caption"]') ||
+                            document.querySelector('textarea');
+                        if (!el) return;
+                        el.focus();
+                        document.execCommand('selectAll', false, null);
+                        document.execCommand('insertText', false, text);
+                    }""",
+                    caption,
+                )
+                logger.info("Legende saisie (%d caracteres).", len(caption))
+            else:
+                logger.warning("Zone de legende introuvable — post sans legende.")
+                _screenshot(page, "error_caption.png")
+
+            time.sleep(2)
+
+            # ── 8. Click "Share / Partager" ───────────────────────────────
+            shared = False
+            for sel in (
+                'div[role="button"]:has-text("Share")',
+                'div[role="button"]:has-text("Partager")',
+                'button:has-text("Share")',
+                'button:has-text("Partager")',
+            ):
+                try:
+                    page.click(sel, timeout=6_000)
+                    shared = True
+                    logger.info("Bouton 'Share' clique.")
+                    break
+                except Exception:
+                    pass
+
+            if not shared:
+                logger.error("Impossible de cliquer sur 'Share'.")
+                _screenshot(page, "error_share.png")
+                browser.close()
+                return False
+
+            # ── 9. Wait for confirmation ──────────────────────────────────
+            time.sleep(5)
+            for sel in (
+                'text=Your post has been shared',
+                'text=Votre publication a ete partagee',
+                'text=Post shared',
+                'span:has-text("Your post has been shared")',
+            ):
+                try:
+                    page.wait_for_selector(sel, timeout=20_000)
+                    logger.info("Publication confirmee !")
+                    break
+                except Exception:
+                    pass
+            else:
+                # No confirmation found — still likely published; log warning
+                logger.warning(
+                    "Confirmation non detectee (le post a probablement ete publie)."
+                )
+
+            # Save refreshed cookies
+            context.storage_state(path=str(_STATE_FILE))
+            browser.close()
+            return True
+
+        except Exception as exc:
+            logger.error("Erreur inattendue lors du post browser : %s", exc)
+            _screenshot(page, "error_unexpected.png")
+            browser.close()
+            return False
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack) -> str:
     """
-    Publie un carousel (album) sur Instagram, puis une Story + premier commentaire.
+    Publie un carousel sur Instagram via Playwright.
 
     image_paths : [slide_fr.jpg, slide_en.jpg]
-    Retourne le media_id (chaîne vide en mode DRY_RUN).
+    Retourne "BROWSER_POST_OK" (ou "DRY_RUN_MEDIA_ID" en mode DRY_RUN).
     """
     caption = _build_caption(content, audio)
 
     if settings.dry_run:
-        logger.info("[DRY RUN] Carousel simulé : %s", [str(p) for p in image_paths])
-        logger.info("[DRY RUN] Légende (300 premiers caractères) :\n%s", caption[:300])
+        logger.info("[DRY RUN] Browser post simule : %s", [str(p) for p in image_paths])
+        logger.info("[DRY RUN] Legende (300 premiers caracteres) :\n%s", caption[:300])
         return "DRY_RUN_MEDIA_ID"
 
-    # Délai anti-bot
-    delay = random.uniform(30, 90)
-    logger.info("Attente de %.0f secondes avant publication…", delay)
-    time.sleep(delay)
+    # Ensure we have a saved session
+    if not _has_session():
+        logger.info("Aucune session Playwright — ouverture du navigateur pour connexion manuelle.")
+        interactive_login()
 
-    cl = _get_client()
+    # Anti-bot delay
+    delay = random.uniform(10, 30)
+    logger.info("Attente de %.0f secondes avant publication...", delay)
+    time.sleep(delay)
 
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
-            if len(image_paths) == 1:
-                # Post simple (fallback)
-                media = cl.photo_upload(
-                    path=str(image_paths[0]),
-                    caption=caption,
-                )
-            else:
-                # Carousel (album)
-                media = cl.album_upload(
-                    paths=[str(p) for p in image_paths],
-                    caption=caption,
-                )
-            media_id = str(media.id)
-            logger.info("Publié avec succès — media_id=%s", media_id)
+            success = _post_carousel(image_paths, caption)
 
-            # Story automatique (slide FR)
-            _post_story(cl, image_paths[0], content)
+            if success:
+                logger.info("Publication reussie (tentative %d/%d).", attempt, _MAX_RETRIES)
+                return "BROWSER_POST_OK"
 
-            # Premier commentaire
-            _post_first_comment(cl, media_id, content)
-
-            return media_id
+            # _post_carousel returned False → session expired, re-login
+            if not _has_session():
+                logger.info("Session expiree — re-connexion manuelle requise.")
+                interactive_login()
 
         except Exception as exc:
-            logger.error("Tentative %d/%d échouée : %s", attempt, _MAX_RETRIES, exc)
-            if attempt < _MAX_RETRIES:
-                logger.info("Nouvelle tentative dans %d secondes…", _RETRY_BACKOFF)
-                time.sleep(_RETRY_BACKOFF)
-            else:
-                raise RuntimeError(
-                    f"Échec de la publication après {_MAX_RETRIES} tentatives"
-                ) from exc
+            logger.error("Tentative %d/%d echouee : %s", attempt, _MAX_RETRIES, exc)
 
-    return ""
+        if attempt < _MAX_RETRIES:
+            logger.info("Nouvelle tentative dans %d secondes...", _RETRY_BACKOFF)
+            time.sleep(_RETRY_BACKOFF)
+
+    raise RuntimeError(f"Echec de la publication apres {_MAX_RETRIES} tentatives")
