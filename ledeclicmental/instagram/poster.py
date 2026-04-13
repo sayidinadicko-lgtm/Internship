@@ -330,24 +330,47 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                 except Exception:
                     pass
 
-            # ── 3. Upload images via file chooser ─────────────────────────
-            with page.expect_file_chooser(timeout=15_000) as fc_info:
-                for sel in (
-                    'button:has-text("Select from computer")',
-                    "button:has-text(\"S\u00e9lectionner sur l'ordinateur\")",
-                    'button:has-text("Select From Computer")',
-                    'div[role="button"]:has-text("Select from computer")',
-                    'button:has-text("Importer depuis")',
-                    'button:has-text("Choisir")',
-                ):
-                    try:
-                        page.click(sel, timeout=4_000)
-                        break
-                    except Exception:
-                        pass
+            # ── 3. Upload images ──────────────────────────────────────────
+            # Save a debug screenshot so we can see what the modal looks like
+            time.sleep(3)
+            _screenshot(page, "debug_before_upload.png")
 
-            file_chooser = fc_info.value
-            file_chooser.set_files([str(img) for img in image_paths])
+            # Strategy A: set files directly on the hidden <input type="file">
+            # This bypasses the need to find and click a button
+            uploaded = False
+            try:
+                file_input = page.locator('input[type="file"]').first
+                file_input.set_input_files(
+                    [str(img) for img in image_paths], timeout=8_000
+                )
+                logger.info("Images uploadees via input[type='file'] direct.")
+                uploaded = True
+            except Exception as exc:
+                logger.warning("Upload direct echoue (%s) — essai via bouton.", exc)
+
+            # Strategy B: click the "Select from computer" button → file chooser
+            if not uploaded:
+                with page.expect_file_chooser(timeout=15_000) as fc_info:
+                    for sel in (
+                        'button:has-text("Select from computer")',
+                        'button:has-text("S\u00e9lectionner sur l\u2019ordinateur")',
+                        "button:has-text(\"S\u00e9lectionner sur l'ordinateur\")",
+                        'button:has-text("Select From Computer")',
+                        'div[role="button"]:has-text("Select from computer")',
+                        'button:has-text("Importer")',
+                        'button:has-text("Choisir")',
+                        'button:has-text("S\u00e9lectionner")',
+                        # Broadest fallback: any button in the dialog
+                        '[role="dialog"] button',
+                    ):
+                        try:
+                            page.click(sel, timeout=3_000)
+                            logger.info("Bouton upload clique : %s", sel)
+                            break
+                        except Exception:
+                            pass
+                fc_info.value.set_files([str(img) for img in image_paths])
+
             logger.info("Images selectionnees : %s", [img.name for img in image_paths])
             time.sleep(3)
 
