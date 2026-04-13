@@ -34,8 +34,8 @@ from ledeclicmental.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-_MAX_RETRIES = 3
-_RETRY_BACKOFF = 60
+_MAX_RETRIES = 1
+_RETRY_BACKOFF = 10
 
 # Persistent Chromium profile — survives between runs, stores cookies/session
 _PROFILE_DIR: Path = settings.data_dir / "session" / "chromium_profile"
@@ -470,7 +470,7 @@ def upload_post(image_paths: list[Path], content: PostContent, audio: AudioTrack
         logger.info("Aucun profil Chromium — ouverture pour connexion manuelle.")
         interactive_login()
 
-    delay = random.uniform(10, 30)
+    delay = random.uniform(3, 6)
     logger.info("Attente de %.0f secondes avant publication...", delay)
     time.sleep(delay)
 
