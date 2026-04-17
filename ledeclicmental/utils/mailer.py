@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import smtplib
+from datetime import date
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -22,7 +23,8 @@ def send_post_email(
     msg = MIMEMultipart()
     msg["From"] = settings.email_sender
     msg["To"] = settings.email_recipient
-    msg["Subject"] = f"POST_{post_number}"
+    today = date.today().strftime("%d/%m/%Y")
+    msg["Subject"] = f"POST_{post_number} — {today}"
 
     msg.attach(MIMEText(caption, "plain", "utf-8"))
 
