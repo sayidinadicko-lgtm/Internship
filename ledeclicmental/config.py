@@ -49,7 +49,7 @@ def load_settings() -> Settings:
         groq_api_key=_require("GROQ_API_KEY"),
         email_sender=os.getenv("EMAIL_SENDER", "sayidinadicko02@gmail.com"),
         email_app_password=_require("EMAIL_APP_PASSWORD"),
-        email_recipient=os.getenv("EMAIL_RECIPIENT", "ledeclimental06@gmail.com"),
+        email_recipient=os.getenv("EMAIL_RECIPIENT", "ledeclicmental06@gmail.com"),
         smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com"),
         smtp_port=int(os.getenv("SMTP_PORT", "587")),
         project_root=root,
