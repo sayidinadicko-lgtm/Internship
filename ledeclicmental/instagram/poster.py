@@ -330,41 +330,61 @@ def _post_carousel(image_paths: list[Path], caption: str) -> bool:
                     if el:
                         el.click()
                         logger.info("'Publication' clique dans la barre laterale.")
-                        time.sleep(3)
                         break
                 except Exception:
                     pass
 
-            # ── 3. Upload images ──────────────────────────────────────────
-            time.sleep(2)
+            # ── 3. Wait for upload modal, then upload images ──────────────
+            # Wait for the upload modal/dialog to appear
+            modal_appeared = False
+            for modal_sel in (
+                '[role="dialog"]',
+                '[aria-modal="true"]',
+                'div:has-text("Faites glisser")',
+                'div:has-text("Drag photos")',
+                'button:has-text("S\u00e9lectionner")',
+                'button:has-text("Select from computer")',
+            ):
+                try:
+                    page.wait_for_selector(modal_sel, timeout=8_000)
+                    logger.info("Modal d'upload detectee via : %s", modal_sel)
+                    modal_appeared = True
+                    break
+                except Exception:
+                    pass
+
+            if not modal_appeared:
+                logger.warning("Modal d'upload non detectee — capture d'ecran.")
+                _screenshot(page, "debug_no_modal.png")
+                context.close()
+                return "ui_failed"
+
+            time.sleep(1)
             _screenshot(page, "debug_before_upload.png")
 
             # Strategy A: set files directly on the hidden <input type="file">
-            # This bypasses the need to find and click a button
             uploaded = False
-            try:
-                file_input = page.locator('input[type="file"]').first
-                file_input.set_input_files(
-                    [str(img) for img in image_paths], timeout=8_000
-                )
-                logger.info("Images uploadees via input[type='file'] direct.")
-                uploaded = True
-            except Exception as exc:
-                logger.warning("Upload direct echoue (%s) — essai via bouton.", exc)
+            for input_sel in ('[role="dialog"] input[type="file"]', 'input[type="file"]'):
+                try:
+                    page.locator(input_sel).first.set_input_files(
+                        [str(img) for img in image_paths], timeout=6_000
+                    )
+                    logger.info("Images uploadees via %s.", input_sel)
+                    uploaded = True
+                    break
+                except Exception:
+                    pass
 
-            # Strategy B: click the "Select from computer" button → file chooser
+            # Strategy B: click "Sélectionner" button → file chooser
             if not uploaded:
                 with page.expect_file_chooser(timeout=15_000) as fc_info:
                     for sel in (
-                        'button:has-text("Select from computer")',
                         'button:has-text("S\u00e9lectionner sur l\u2019ordinateur")',
                         "button:has-text(\"S\u00e9lectionner sur l'ordinateur\")",
+                        'button:has-text("Select from computer")',
                         'button:has-text("Select From Computer")',
-                        'div[role="button"]:has-text("Select from computer")',
                         'button:has-text("Importer")',
-                        'button:has-text("Choisir")',
                         'button:has-text("S\u00e9lectionner")',
-                        # Broadest fallback: any button in the dialog
                         '[role="dialog"] button',
                     ):
                         try:
