@@ -115,6 +115,52 @@ def _pick_curated(today: date) -> tuple[str, str]:
     return pool[0]
 
 
+def get_multiple_topics(n: int = 3) -> list[Topic]:
+    """
+    Retourne n sujets différents, aucun utilisé dans les 120 derniers jours.
+    """
+    today = date.today()
+    topics: list[Topic] = []
+    used_keywords: set[str] = set()
+
+    # Essaie Google Trends pour le premier sujet
+    result = _fetch_from_trends()
+    if result:
+        fr, en = result
+        if not was_topic_used_recently(fr, days=120):
+            topics.append(Topic(keyword_fr=fr, keyword_en=en, source="trends"))
+            used_keywords.add(fr.lower())
+
+    # Complète avec la liste curatée (ordre aléatoire basé sur la date)
+    rng = random.Random(today.toordinal())
+    pool = list(_CURATED)
+    rng.shuffle(pool)
+
+    for fr, en in pool:
+        if len(topics) >= n:
+            break
+        if fr.lower() in used_keywords:
+            continue
+        if was_topic_used_recently(fr, days=120):
+            continue
+        topics.append(Topic(keyword_fr=fr, keyword_en=en, source="curated"))
+        used_keywords.add(fr.lower())
+
+    # Fallback si tout a été utilisé récemment
+    if len(topics) < n:
+        rng2 = random.Random(today.toordinal() + 999)
+        pool2 = [p for p in _CURATED if p[0].lower() not in used_keywords]
+        rng2.shuffle(pool2)
+        for fr, en in pool2:
+            if len(topics) >= n:
+                break
+            topics.append(Topic(keyword_fr=fr, keyword_en=en, source="curated"))
+            used_keywords.add(fr.lower())
+
+    logger.info("Topics selectionnes : %s", [t.keyword_fr for t in topics[:n]])
+    return topics[:n]
+
+
 def get_daily_topic() -> Topic:
     """
     Return today's motivation topic.

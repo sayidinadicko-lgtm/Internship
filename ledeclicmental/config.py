@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Resolve .env relative to this file's parent (project root)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_PROJECT_ROOT / ".env", override=False)
 
@@ -22,29 +21,10 @@ def _require(key: str) -> str:
     return value
 
 
-def _parse_post_times(raw: str) -> list[tuple[int, int]]:
-    """Parse 'HH:MM,HH:MM,HH:MM' into [(h,m), ...]"""
-    result = []
-    for entry in raw.split(","):
-        entry = entry.strip()
-        h, m = entry.split(":")
-        result.append((int(h), int(m)))
-    return result
-
-
 @dataclass(frozen=True)
 class Settings:
-    # Instagram
-    instagram_username: str
-    instagram_password: str
-    instagram_session_file: Path
-
     # Groq
     groq_api_key: str
-
-    # Schedule
-    post_times: list[tuple[int, int]]
-    timezone: str
 
     # Paths
     project_root: Path
@@ -53,24 +33,17 @@ class Settings:
     post_history_file: Path
 
     # Behaviour
-    dry_run: bool
     log_level: str
 
 
 def load_settings() -> Settings:
     root = _PROJECT_ROOT
     return Settings(
-        instagram_username=_require("INSTAGRAM_USERNAME"),
-        instagram_password=_require("INSTAGRAM_PASSWORD"),
-        instagram_session_file=root / os.getenv("INSTAGRAM_SESSION_FILE", "data/session/instagram_session.json"),
         groq_api_key=_require("GROQ_API_KEY"),
-        post_times=_parse_post_times(os.getenv("POST_TIMES", "07:00,12:30,19:00")),
-        timezone=os.getenv("TIMEZONE", "Europe/Paris"),
         project_root=root,
         assets_dir=root / "assets",
         data_dir=root / "data",
         post_history_file=root / os.getenv("POST_HISTORY_FILE", "data/post_history.json"),
-        dry_run=os.getenv("DRY_RUN", "false").lower() == "true",
         log_level=os.getenv("LOG_LEVEL", "INFO"),
     )
 

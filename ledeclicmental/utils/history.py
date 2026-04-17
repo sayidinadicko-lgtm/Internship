@@ -70,3 +70,15 @@ def record_post(
     _save(records)
     logger.debug("Recorded post %s for topic '%s'", entry["id"], topic_fr)
     return entry["id"]
+
+
+def record_topic_used(keyword_fr: str) -> None:
+    """Enregistre qu'un sujet a été utilisé aujourd'hui (anti-répétition 120j)."""
+    records = _load()
+    records.append({
+        "id": str(uuid.uuid4()),
+        "posted_at": datetime.utcnow().isoformat(timespec="seconds"),
+        "topic_fr": keyword_fr,
+    })
+    _save(records)
+    logger.debug("Sujet enregistre : '%s'", keyword_fr)
