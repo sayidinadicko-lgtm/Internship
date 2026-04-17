@@ -87,9 +87,9 @@ Thème du jour : "{topic.keyword_fr}" / "{topic.keyword_en}"
 Moment de publication : {slot_ctx["fr"]} / {slot_ctx["en"]}
 
 Le post doit comporter :
-- Une citation courte et percutante (max 15 mots) en français
-- La même citation en anglais
-- Une légende engageante en français (3-4 phrases, ton direct et motivant)
+- Une citation percutante et impactante (20 à 35 mots) en français — phrase complète, riche, pas un slogan minimaliste
+- La même citation en anglais (traduction naturelle, même longueur)
+- Une légende engageante en français (4-5 phrases, ton direct et motivant)
 - La même légende en anglais (traduction naturelle, pas littérale)
 - Un call-to-action en français (1 phrase qui invite à commenter ou partager)
 - Le même call-to-action en anglais
