@@ -1,0 +1,24 @@
+name: Instagram Auto Post — @ledeclicmental
+
+# NOTE: This workflow is DISABLED — Instagram blocks GitHub Actions datacenter IPs.
+# The bot runs locally on your PC via the Windows Startup VBScript.
+# Keep this file for reference only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'Ce workflow est desactive (Instagram bloque les IPs GitHub Actions). Utilisez le bot local.'
+        required: false
+        default: 'info'
+
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notice
+        run: |
+          echo "Ce workflow est desactive."
+          echo "Le bot Instagram tourne localement sur votre PC Windows."
+          echo "Lancez : python -m ledeclicmental --login  (premiere connexion)"
+          echo "Puis   : python -m ledeclicmental           (scheduler 3x/jour)"

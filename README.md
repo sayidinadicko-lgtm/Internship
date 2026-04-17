@@ -1,87 +1,181 @@
-# CV Optimizer – Stages Microélectronique / IA Embarquée
+# ledeclicmental — Instagram Automation Bot
 
-Automatise la recherche d'offres de stage et l'optimisation du CV + lettre de motivation pour chaque offre.
+Automatisation complète du compte Instagram [@ledeclicmental](https://instagram.com/ledeclicmental) — compte de motivation bilingue FR/EN.
 
 ## Fonctionnement
 
-1. **Scraping** : récupère les offres de stage sur Indeed France et HelloWork
-2. **Optimisation CV** : adapte le CV aux mots-clés de chaque offre (ATS-friendly) via Claude API
-3. **Lettre de motivation** : génère une lettre personnalisée pour chaque offre
-4. **Export** : génère un `.docx` pour le CV et un `.docx` pour la lettre de motivation
+Le bot publie **3 posts par jour** aux horaires optimaux pour l'audience francophone :
 
-### Structure du CV généré
+| Slot | Heure (Paris) | Thème |
+|------|--------------|-------|
+| Matin | 07h00 | Énergie, ambition du réveil |
+| Midi | 12h30 | Focus, relance de l'élan |
+| Soir | 19h00 | Réflexion, recharge |
+
+### Pipeline pour chaque post
 
 ```
-[TITRE DU POSTE] ← en gros, centré, gras (ATS)
-─────────────────────────────────────────────
-Informations personnelles (email, téléphone, localisation, LinkedIn, GitHub)
-Compétences (priorité aux compétences de l'offre)
-Formation (Bac → CPGE PT → Polytech Marseille)
-Projets
-Expériences professionnelles
-Langues
-Centres d'intérêt
-                                    Prénom NOM ← tout en bas
+Google Trends (thème du jour)
+  → Claude API (citation + légende bilingue FR/EN)
+  → PIL/Pillow (image 1080×1080 avec logo)
+  → instagrapi (publication Instagram)
+  → Historique local (déduplication)
 ```
 
-> **Note :** Pas de photo, pas de nationalité dans le CV généré.
+---
 
 ## Installation
+
+### 1. Prérequis
+
+- Python 3.10+
+- Un compte Instagram actif (@ledeclicmental)
+- Une clé API Anthropic
+
+### 2. Installer les dépendances
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Créer un fichier `.env` à la racine :
+### 3. Configuration
+
+```bash
+cp .env.example .env
+# Éditer .env avec vos identifiants
+nano .env
 ```
+
+Variables obligatoires dans `.env` :
+```
+INSTAGRAM_USERNAME=ledeclicmental
+INSTAGRAM_PASSWORD=votre_mot_de_passe
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-## Configuration du CV
+### 4. Ajouter votre logo
 
-Remplir `cv_data.json` avec tes informations personnelles, compétences, projets, formation, etc.
+Déposez votre logo dans `assets/logo/ledeclicmental_logo.png`
+- Format : PNG avec transparence (RGBA)
+- Taille recommandée : 300×300 px minimum
+
+### 5. Générer les templates de fond
+
+```bash
+python scripts/build_templates.py
+```
+
+---
 
 ## Utilisation
 
+### Démarrer le bot (mode production)
+
 ```bash
-# Toutes les sources (Indeed + HelloWork), 10 offres max par source
-python main.py
-
-# Seulement Indeed, 5 offres
-python main.py --source indeed --max 5
-
-# Seulement HelloWork, requête personnalisée
-python main.py --source hellowork --query "stage FPGA intelligence artificielle embarquée" --max 8
-
-# Dossier de sortie personnalisé
-python main.py --output mes_candidatures/
+python scripts/run.py
 ```
 
-### Arguments disponibles
+Le bot tourne en continu et publie aux heures configurées.
 
-| Argument | Défaut | Description |
-|---|---|---|
-| `--source` | `all` | Source : `indeed`, `hellowork`, ou `all` |
-| `--max` | `10` | Nombre max d'offres par source |
-| `--query` | `"stage microelectronique IA embarquée..."` | Requête de recherche |
-| `--location` | `France` | Localisation pour la recherche |
-| `--cv` | `cv_data.json` | Chemin vers les données du CV |
-| `--output` | `output/` | Dossier de sortie |
+### Tester sans publier sur Instagram
+
+```bash
+# Test de rendu d'image (aucun appel API)
+python scripts/test_image.py --slot morning
+
+# Test de génération de contenu (appel Claude API, pas de publication)
+python scripts/test_content.py --slot evening
+
+# Mode dry-run complet (pipeline entier, sans publication)
+DRY_RUN=true python scripts/run.py --now morning
+```
+
+### Publier un post immédiatement
+
+```bash
+python scripts/run.py --now morning    # ou midday, evening
+```
+
+---
 
 ## Structure du projet
 
 ```
-Internship/
-├── main.py                  # Point d'entrée
-├── cv_data.json             # Données personnelles du CV (à remplir)
-├── requirements.txt
-├── .env                     # Clé API (non commitée)
-├── scrapers/
-│   ├── indeed.py            # Scraper Indeed France
-│   └── hellowork.py         # Scraper HelloWork
-├── cv_optimizer/
-│   ├── optimizer.py         # Optimisation CV via Claude
-│   ├── cover_letter.py      # Génération lettre de motivation
-│   └── docx_builder.py      # Export Word (.docx)
-└── output/                  # CVs et LMs générés (non commités)
+ledeclicmental/
+├── assets/
+│   ├── fonts/          # Polices (Montserrat-Bold.ttf, etc.)
+│   ├── logo/           # ledeclicmental_logo.png  ← déposer ici
+│   └── templates/      # Fonds générés par build_templates.py
+│
+├── data/
+│   ├── generated/      # Images temporaires (auto-nettoyage 7j)
+│   ├── logs/           # app.log, error.log
+│   ├── session/        # Session Instagram (ne pas commiter)
+│   └── post_history.json
+│
+├── ledeclicmental/
+│   ├── config.py           # Configuration centralisée
+│   ├── scheduler.py        # Orchestrateur APScheduler
+│   ├── topics/trending.py  # Google Trends + fallback
+│   ├── content/
+│   │   ├── generator.py    # Claude API → contenu bilingue
+│   │   ├── hashtags.py     # 30 hashtags FR+EN par post
+│   │   └── audio.py        # Recommandations musicales
+│   ├── image/renderer.py   # Rendu PIL 1080×1080
+│   └── instagram/poster.py # Publication via instagrapi
+│
+├── scripts/
+│   ├── run.py              # Point d'entrée principal
+│   ├── test_image.py       # Test visuel du rendu
+│   ├── test_content.py     # Test génération Claude
+│   └── build_templates.py  # Génère les fonds
+│
+└── tests/                  # Tests unitaires
 ```
+
+---
+
+## Personnalisation
+
+### Horaires de publication
+
+Dans `.env` :
+```
+POST_TIMES=07:00,12:30,19:00
+TIMEZONE=Europe/Paris
+```
+
+### Thèmes / topics
+
+Le fichier `ledeclicmental/topics/trending.py` contient une liste de 40 thèmes evergreen en `_CURATED`. Vous pouvez en ajouter/modifier.
+
+### Hashtags
+
+Le fichier `ledeclicmental/content/hashtags.py` contient :
+- `_BRAND_TAGS` : vos hashtags de marque (toujours inclus)
+- `_TOPIC_TAGS` : hashtags spécifiques par thème
+- `_POOL` : pool de 200+ hashtags rotatifs bilingues
+
+### Audio / musique
+
+Le fichier `ledeclicmental/content/audio.py` contient `_LIBRARY` — la liste des morceaux recommandés. Ajoutez vos favoris en suivant le format `AudioTrack`.
+
+---
+
+## Sécurité
+
+- La session Instagram est sauvegardée dans `data/session/` (gitignore)
+- Le fichier `.env` n'est jamais commité
+- Le bot publie max 3 fois/jour (bien en-dessous des limites Instagram)
+- Délai aléatoire 30–90s avant chaque publication (comportement humain)
+- Mode `DRY_RUN=true` pour tester sans risque
+
+---
+
+## Polices recommandées (optionnel)
+
+Pour un meilleur rendu visuel, téléchargez et placez dans `assets/fonts/` :
+- `Montserrat-Bold.ttf` — [Google Fonts](https://fonts.google.com/specimen/Montserrat)
+- `Raleway-Italic.ttf` — [Google Fonts](https://fonts.google.com/specimen/Raleway)
+
+Sans ces polices, le bot utilise les polices système disponibles.
