@@ -33,9 +33,10 @@ def send_post_email(
         img.add_header("Content-ID", f"<{cid}>")
         msg.attach(img)
 
+    password = settings.email_app_password.replace(" ", "")
     with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
         server.starttls()
-        server.login(settings.email_sender, settings.email_app_password)
+        server.login(settings.email_sender, password)
         server.sendmail(settings.email_sender, settings.email_recipient, msg.as_string())
 
     logger.info("Email POST_%d envoyé à %s", post_number, settings.email_recipient)
