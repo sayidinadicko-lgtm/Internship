@@ -1,5 +1,5 @@
 """
-Génère 3 posts motivationnels et les dépose sur le Bureau.
+Génère 3 posts motivationnels, les dépose sur le Bureau et les envoie par email.
 
 Structure créée :
   Bureau/
@@ -24,6 +24,7 @@ from ledeclicmental.image.renderer import render_post
 from ledeclicmental.topics.trending import get_multiple_topics
 from ledeclicmental.utils.history import record_topic_used
 from ledeclicmental.utils.logger import get_logger
+from ledeclicmental.utils.mailer import send_post_email
 
 logger = get_logger(__name__)
 
@@ -42,7 +43,6 @@ def _find_desktop() -> Path:
     for path in candidates:
         if path.exists():
             return path
-    # Fallback : crée Desktop s'il n'existe pas
     fallback = home / "Desktop"
     fallback.mkdir(parents=True, exist_ok=True)
     return fallback
@@ -62,62 +62,63 @@ def _build_caption(content) -> str:
 
 
 def generate_daily_posts() -> None:
-    """
-    Point d'entrée principal.
-    Génère 3 posts et les dépose sur le Bureau dans 'Le déclic mental/'.
-    """
     desktop = _find_desktop()
     output_dir = desktop / _FOLDER_NAME
 
-    # ── Supprimer les anciens posts ───────────────────────────────────────────
     if output_dir.exists():
         shutil.rmtree(output_dir)
         logger.info("Anciens posts supprimes.")
     output_dir.mkdir(parents=True)
 
-    # ── Obtenir 3 sujets différents (pas répétés avant 120 jours) ────────────
     topics = get_multiple_topics(n=3)
     logger.info(
         "Sujets du jour : %s",
         " | ".join(t.keyword_fr for t in topics),
     )
 
-    # ── Générer chaque post ───────────────────────────────────────────────────
     for i, topic in enumerate(topics, start=1):
         post_dir = output_dir / f"Post {i}"
         post_dir.mkdir()
 
-        # Contenu bilingue via Groq
         content = generate_post(topic, slot="morning")
         logger.info("Post %d — citation FR : '%s'", i, content.quote_fr)
 
-        # Images (sauvegardées temporairement dans data/generated/)
         image_paths = render_post(content)
 
-        # Copie vers le dossier du post avec noms propres
+        slide_fr = slide_en = None
         for img_path in image_paths:
             lang = "fr" if "_fr." in img_path.name else "en"
             dest = post_dir / f"slide_{lang}.jpg"
             shutil.copy2(img_path, dest)
+            if lang == "fr":
+                slide_fr = dest
+            else:
+                slide_en = dest
 
-        # Légende à copier-coller
         caption = _build_caption(content)
         (post_dir / "legende.txt").write_text(caption, encoding="utf-8")
 
+        # ── Envoi par email ───────────────────────────────────────────────────
+        if slide_fr and slide_en:
+            try:
+                send_post_email(i, slide_fr, slide_en, caption)
+                print(f"  Email POST_{i} envoye.")
+            except Exception as exc:
+                logger.warning("Echec envoi email POST_%d : %s", i, exc)
+                print(f"  Echec email POST_{i} : {exc}")
+
         logger.info("Post %d enregistre dans %s", i, post_dir)
 
-    # ── Enregistrer les sujets utilisés (anti-répétition 120j) ───────────────
     for topic in topics:
         record_topic_used(topic.keyword_fr)
 
-    # ── Ouvrir le dossier dans l'explorateur Windows ──────────────────────────
     try:
         os.startfile(str(output_dir))
     except Exception:
         pass
 
     print(f"\n{'='*55}")
-    print(f"  3 posts generes avec succes !")
+    print(f"  3 posts generes et envoyes par email !")
     print(f"  Dossier : {output_dir}")
     print(f"{'='*55}\n")
     for i, topic in enumerate(topics, 1):
