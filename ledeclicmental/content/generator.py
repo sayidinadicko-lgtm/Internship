@@ -1,8 +1,7 @@
 """
 Bilingual post content generation via Groq API (free tier).
 
-One API call generates French + English content simultaneously,
-ensuring thematic and tonal coherence between both languages.
+Generates short motivational stories (FR + EN) with a moral at the end.
 """
 from __future__ import annotations
 
@@ -34,28 +33,15 @@ class PostContent:
     slot: str  # "morning" | "midday" | "evening"
 
     # Bilingual content
-    quote_fr: str
-    quote_en: str
+    quote_fr: str   # histoire en français
+    quote_en: str   # histoire en anglais
+    moral_fr: str   # morale en français
+    moral_en: str   # morale en anglais
     caption_fr: str
     caption_en: str
-    cta_fr: str  # call-to-action
+    cta_fr: str
     cta_en: str
 
-
-_SLOT_CONTEXT = {
-    "morning": {
-        "fr": "matin (énergie, lancement de la journée, ambition du réveil)",
-        "en": "morning (energy, day-launch, wake-up ambition)",
-    },
-    "midday": {
-        "fr": "midi (relance de l'élan, focus, reprendre le cap)",
-        "en": "midday (momentum reboot, focus, getting back on track)",
-    },
-    "evening": {
-        "fr": "soir (réflexion, bilan, recharge pour demain)",
-        "en": "evening (reflection, self-assessment, recharging for tomorrow)",
-    },
-}
 
 _SYSTEM_PROMPT = """
 Tu es le créateur de contenu du compte Instagram @ledeclicmental — un compte de motivation en français et en anglais.
@@ -66,38 +52,34 @@ La voix de la marque est :
 - Inclusive, accessible à tous les âges
 - Inspirante mais réaliste
 
-Tu génères des posts Instagram bilingues (français + anglais) sur des thèmes de motivation et développement personnel.
+Tu génères des posts Instagram bilingues (français + anglais) sous forme de courtes histoires motivantes.
 
 Format de réponse OBLIGATOIRE : JSON valide uniquement, sans markdown ni backticks.
 """.strip()
 
 
 def generate_post(topic: Topic, slot: str) -> PostContent:
-    """
-    Call Groq (Llama 3.3 70B) to generate a bilingual Instagram post.
-
-    Returns a PostContent dataclass with all text fields populated.
-    """
-    slot_ctx = _SLOT_CONTEXT.get(slot, _SLOT_CONTEXT["morning"])
-
     user_prompt = f"""
 Génère un post Instagram bilingue pour le compte @ledeclicmental.
 
 Thème du jour : "{topic.keyword_fr}" / "{topic.keyword_en}"
-Moment de publication : {slot_ctx["fr"]} / {slot_ctx["en"]}
 
 Le post doit comporter :
-- Une citation percutante et impactante (20 à 35 mots) en français — phrase complète, riche, pas un slogan minimaliste
-- La même citation en anglais (traduction naturelle, même longueur)
-- Une légende engageante en français (4-5 phrases, ton direct et motivant)
-- La même légende en anglais (traduction naturelle, pas littérale)
+- Une courte histoire motivante en français (60 à 80 mots, 4-5 phrases) — une vraie mini-histoire avec un personnage, une situation et un retournement inspirant. Pas une liste, une vraie narration.
+- La même histoire en anglais (traduction naturelle)
+- La morale de l'histoire en français (1 phrase courte et percutante)
+- La même morale en anglais
+- Une légende Instagram engageante en français (3-4 phrases, ton direct)
+- La même légende en anglais
 - Un call-to-action en français (1 phrase qui invite à commenter ou partager)
 - Le même call-to-action en anglais
 
 Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
 {{
-  "quote_fr": "...",
-  "quote_en": "...",
+  "story_fr": "...",
+  "story_en": "...",
+  "moral_fr": "...",
+  "moral_en": "...",
   "caption_fr": "...",
   "caption_en": "...",
   "cta_fr": "...",
@@ -109,7 +91,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
 
     response = _get_client().chat.completions.create(
         model="llama-3.3-70b-versatile",
-        max_tokens=1024,
+        max_tokens=1500,
         messages=[
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -117,8 +99,6 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
     )
 
     raw = response.choices[0].message.content.strip()
-
-    # Strip markdown fences if the model adds them despite instructions
     raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
     raw = re.sub(r"\s*```$", "", raw, flags=re.MULTILINE)
 
@@ -131,13 +111,15 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
     post = PostContent(
         topic=topic,
         slot=slot,
-        quote_fr=data["quote_fr"],
-        quote_en=data["quote_en"],
+        quote_fr=data["story_fr"],
+        quote_en=data["story_en"],
+        moral_fr=data["moral_fr"],
+        moral_en=data["moral_en"],
         caption_fr=data["caption_fr"],
         caption_en=data["caption_en"],
         cta_fr=data["cta_fr"],
         cta_en=data["cta_en"],
     )
 
-    logger.info("Content generated — quote_fr: '%s'", post.quote_fr)
+    logger.info("Histoire générée — FR : '%s'", post.quote_fr[:60])
     return post
