@@ -70,11 +70,13 @@ Thème du jour : "{topic.keyword_fr}" / "{topic.keyword_en}"
 - Une situation de départ claire
 - Un retournement ou une révélation qui surprend et inspire
 - Un style poétique et imageé, agréable à lire à voix haute
-- Une morale finale courte et frappante (1 phrase, commence par "Morale :")
+- Le récit s\'arrête à la fin de l\'histoire, sans morale dans le texte
+
+La morale est séparée dans le champ "moral_fr" (1 phrase courte et percutante, sans préfixe "Morale :").
 
 Puis :
-- Traduis l'histoire en anglais (traduction littéraire naturelle)
-- Traduis la morale en anglais
+- Traduis l\'histoire en anglais (traduction littéraire naturelle)
+- La morale en anglais (sans préfixe "Morale :")
 - Écris une légende Instagram en français (3-4 phrases engageantes)
 - La même légende en anglais
 - Un call-to-action en français (invite à commenter ou partager)
@@ -114,13 +116,16 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
         logger.error("Groq returned invalid JSON: %s\nRaw: %s", exc, raw)
         raise RuntimeError("Groq returned non-JSON content") from exc
 
+    def _clean_moral(text: str) -> str:
+        return re.sub(r"^morale\s*:\s*", "", text, flags=re.IGNORECASE).strip()
+
     post = PostContent(
         topic=topic,
         slot=slot,
         quote_fr=data["story_fr"],
         quote_en=data["story_en"],
-        moral_fr=data["moral_fr"],
-        moral_en=data["moral_en"],
+        moral_fr=_clean_moral(data["moral_fr"]),
+        moral_en=_clean_moral(data["moral_en"]),
         caption_fr=data["caption_fr"],
         caption_en=data["caption_en"],
         cta_fr=data["cta_fr"],
