@@ -1,7 +1,7 @@
 """
-Bilingual post content generation via Groq API (free tier).
+Bilingual post content generation via Groq API.
 
-Generates short motivational stories (FR + EN) with a moral at the end.
+Generates short fables / contes (FR + EN) with a moral, in the style of La Fontaine / Aesop.
 """
 from __future__ import annotations
 
@@ -30,13 +30,12 @@ def _get_client() -> Groq:
 @dataclass
 class PostContent:
     topic: Topic
-    slot: str  # "morning" | "midday" | "evening"
+    slot: str
 
-    # Bilingual content
-    quote_fr: str   # histoire en français
-    quote_en: str   # histoire en anglais
-    moral_fr: str   # morale en français
-    moral_en: str   # morale en anglais
+    quote_fr: str
+    quote_en: str
+    moral_fr: str
+    moral_en: str
     caption_fr: str
     caption_en: str
     cta_fr: str
@@ -44,15 +43,17 @@ class PostContent:
 
 
 _SYSTEM_PROMPT = """
-Tu es le créateur de contenu du compte Instagram @ledeclicmental — un compte de motivation en français et en anglais.
+Tu es un conteur talentueux pour le compte Instagram @ledeclicmental — un compte de motivation en français et en anglais.
 
-La voix de la marque est :
-- Directe, chaleureuse, sans faux positif
-- Orientée action concrète, pas de vœux pieux
-- Inclusive, accessible à tous les âges
-- Inspirante mais réaliste
+Tu écris de courtes fables, contes ou histoires imaginaires dans le style de La Fontaine, Esope ou les contes orientaux.
+Chaque histoire doit :
+- Avoir des personnages vivants (animaux, héros, sages, enfants, voyageurs...)
+- Créer une vraie tension narrative avec un retournement ou une révélation
+- Être poétique, imageée, agréable à lire
+- Porter une leçon de vie profonde sans être moralisatrice
+- Donner envie de relire et de partager
 
-Tu génères des posts Instagram bilingues (français + anglais) sous forme de courtes histoires motivantes.
+La voix est chaleureuse, littéraire mais accessible, jamais froide ni générique.
 
 Format de réponse OBLIGATOIRE : JSON valide uniquement, sans markdown ni backticks.
 """.strip()
@@ -60,18 +61,23 @@ Format de réponse OBLIGATOIRE : JSON valide uniquement, sans markdown ni backti
 
 def generate_post(topic: Topic, slot: str) -> PostContent:
     user_prompt = f"""
-Génère un post Instagram bilingue pour le compte @ledeclicmental.
+Écris un post Instagram bilingue pour le compte @ledeclicmental.
 
 Thème du jour : "{topic.keyword_fr}" / "{topic.keyword_en}"
 
-Le post doit comporter :
-- Une courte histoire motivante en français (60 à 80 mots, 4-5 phrases) — une vraie mini-histoire avec un personnage, une situation et un retournement inspirant. Pas une liste, une vraie narration.
-- La même histoire en anglais (traduction naturelle)
-- La morale de l'histoire en français (1 phrase courte et percutante)
-- La même morale en anglais
-- Une légende Instagram engageante en français (3-4 phrases, ton direct)
+Écris une fable, un conte ou une histoire imaginaire courte en français (70 à 100 mots) avec :
+- Un ou plusieurs personnages attachants (animal, enfant, sage, voyageur, artisan...)
+- Une situation de départ claire
+- Un retournement ou une révélation qui surprend et inspire
+- Un style poétique et imageé, agréable à lire à voix haute
+- Une morale finale courte et frappante (1 phrase, commence par "Morale :")
+
+Puis :
+- Traduis l'histoire en anglais (traduction littéraire naturelle)
+- Traduis la morale en anglais
+- Écris une légende Instagram en français (3-4 phrases engageantes)
 - La même légende en anglais
-- Un call-to-action en français (1 phrase qui invite à commenter ou partager)
+- Un call-to-action en français (invite à commenter ou partager)
 - Le même call-to-action en anglais
 
 Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
