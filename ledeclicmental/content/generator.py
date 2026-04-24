@@ -1,7 +1,7 @@
 """
 Bilingual post content generation via Groq API.
 
-Generates short fables / contes (FR + EN) with a moral, in the style of La Fontaine / Aesop.
+Retranscribes real, well-known fables and tales (FR + EN) with their moral.
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from groq import Groq
 
 from ledeclicmental.config import settings
-from ledeclicmental.topics.trending import Topic
+from ledeclicmental.content.stories import Story
 from ledeclicmental.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,7 +29,8 @@ def _get_client() -> Groq:
 
 @dataclass
 class PostContent:
-    topic: Topic
+    story_title: str
+    story_source: str
     slot: str
 
     quote_fr: str
@@ -43,46 +44,37 @@ class PostContent:
 
 
 _SYSTEM_PROMPT = """
-Tu es un conteur talentueux pour le compte Instagram @ledeclicmental — un compte de motivation en français et en anglais.
+Tu es un conteur pour le compte Instagram @ledeclicmental.
 
-Tu écris de courtes fables, contes ou histoires imaginaires dans le style de La Fontaine, Esope ou les contes orientaux.
-Chaque histoire doit :
-- Avoir des personnages vivants (animaux, héros, sages, enfants, voyageurs...)
-- Créer une vraie tension narrative avec un retournement ou une révélation
-- Être poétique, imageée, agréable à lire
-- Porter une leçon de vie profonde sans être moralisatrice
-- Donner envie de relire et de partager
-
-La voix est chaleureuse, littéraire mais accessible, jamais froide ni générique.
+Tu retranscris fidèlement de vraies fables et contes célèbres (Ésope, La Fontaine, Bible, Mille et une Nuits, mythologie, contes zen...).
+Tu respectes l'esprit et les personnages de l'histoire originale, mais tu l'écris dans un style fluide, poétique et engageant pour Instagram.
 
 Format de réponse OBLIGATOIRE : JSON valide uniquement, sans markdown ni backticks.
 """.strip()
 
 
-def generate_post(topic: Topic, slot: str) -> PostContent:
+def generate_post(story: Story, slot: str) -> PostContent:
     user_prompt = f"""
-Écris un post Instagram bilingue pour le compte @ledeclicmental.
+Retranscris cette histoire célèbre pour le compte Instagram @ledeclicmental.
 
-Thème du jour : "{topic.keyword_fr}" / "{topic.keyword_en}"
+Histoire : "{story.title_fr}" ({story.source})
 
-Écris une fable, un conte ou une histoire imaginaire courte en français (70 à 100 mots) avec :
-- Un ou plusieurs personnages attachants (animal, enfant, sage, voyageur, artisan...)
-- Une situation de départ claire
-- Un retournement ou une révélation qui surprend et inspire
-- Un style poétique et imageé, agréable à lire à voix haute
-- Le récit s\'arrête à la fin de l\'histoire, sans morale dans le texte
+Écris le récit en français (70 à 100 mots) :
+- Fidèle à l'histoire originale (personnages, situation, retournement)
+- Style fluide, poétique, agréable à lire
+- Le récit s'arrête à la fin de l'histoire — sans morale dans le texte
 
-La morale est séparée dans le champ "moral_fr" (1 phrase courte et percutante, sans préfixe "Morale :").
+La morale est dans le champ "moral_fr" : 1 phrase percutante tirée de l'histoire originale, sans préfixe "Morale :".
 
 Puis :
-- Traduis l\'histoire en anglais (traduction littéraire naturelle)
-- La morale en anglais (sans préfixe "Morale :")
-- Écris une légende Instagram en français (3-4 phrases engageantes)
-- La même légende en anglais
-- Un call-to-action en français (invite à commenter ou partager)
-- Le même call-to-action en anglais
+- Même récit en anglais (traduction naturelle et littéraire)
+- Morale en anglais (sans préfixe "Morale :")
+- Légende Instagram en français (3-4 phrases engageantes, mentionne le titre et la source)
+- Même légende en anglais
+- Call-to-action en français (invite à commenter ou partager)
+- Même call-to-action en anglais
 
-Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
+Réponds UNIQUEMENT avec ce JSON :
 {{
   "story_fr": "...",
   "story_en": "...",
@@ -95,7 +87,7 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
 }}
 """.strip()
 
-    logger.info("Calling Groq for topic='%s' slot='%s'", topic.keyword_fr, slot)
+    logger.info("Calling Groq for story='%s' (%s)", story.title_fr, story.source)
 
     response = _get_client().chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -116,21 +108,22 @@ Réponds UNIQUEMENT avec ce JSON (aucun texte avant ou après) :
         logger.error("Groq returned invalid JSON: %s\nRaw: %s", exc, raw)
         raise RuntimeError("Groq returned non-JSON content") from exc
 
-    def _clean_moral(text: str) -> str:
+    def _clean(text: str) -> str:
         return re.sub(r"^morale\s*:\s*", "", text, flags=re.IGNORECASE).strip()
 
     post = PostContent(
-        topic=topic,
+        story_title=story.title_fr,
+        story_source=story.source,
         slot=slot,
         quote_fr=data["story_fr"],
         quote_en=data["story_en"],
-        moral_fr=_clean_moral(data["moral_fr"]),
-        moral_en=_clean_moral(data["moral_en"]),
+        moral_fr=_clean(data["moral_fr"]),
+        moral_en=_clean(data["moral_en"]),
         caption_fr=data["caption_fr"],
         caption_en=data["caption_en"],
         cta_fr=data["cta_fr"],
         cta_en=data["cta_en"],
     )
 
-    logger.info("Histoire générée — FR : '%s'", post.quote_fr[:60])
+    logger.info("Histoire retranscrite : '%s'", post.story_title)
     return post
