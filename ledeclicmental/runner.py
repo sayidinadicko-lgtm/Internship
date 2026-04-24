@@ -9,7 +9,7 @@ Structure créée :
       Post 3/  ...
 
 Les anciens posts sont supprimés à chaque lancement.
-Les sujets utilisés ne reviennent pas avant 120 jours.
+Les histoires utilisées ne reviennent pas avant 120 jours.
 """
 from __future__ import annotations
 
@@ -20,8 +20,8 @@ from pathlib import Path
 from ledeclicmental.config import settings
 from ledeclicmental.content.generator import generate_post
 from ledeclicmental.content.hashtags import format_hashtags, get_hashtags
+from ledeclicmental.content.stories import get_multiple_stories
 from ledeclicmental.image.renderer import render_post
-from ledeclicmental.topics.trending import get_multiple_topics
 from ledeclicmental.utils.history import record_topic_used
 from ledeclicmental.utils.logger import get_logger
 from ledeclicmental.utils.mailer import send_post_email
@@ -32,7 +32,6 @@ _FOLDER_NAME = "Le déclic mental"
 
 
 def _find_desktop() -> Path:
-    """Trouve le Bureau Windows (FR ou EN, avec ou sans OneDrive)."""
     home = Path.home()
     candidates = [
         home / "OneDrive" / "Bureau",
@@ -51,7 +50,7 @@ def _find_desktop() -> Path:
 def _build_caption(content) -> str:
     fr_block = f"{content.caption_fr}\n\n{content.cta_fr}"
     en_block = f"{content.caption_en}\n\n{content.cta_en}"
-    tags = get_hashtags(content.topic.keyword_fr, "morning")
+    tags = get_hashtags(content.story_title, "morning")
     return (
         f"{fr_block}\n\n"
         f"- - -\n\n"
@@ -70,18 +69,15 @@ def generate_daily_posts() -> None:
         logger.info("Anciens posts supprimes.")
     output_dir.mkdir(parents=True)
 
-    topics = get_multiple_topics(n=3)
-    logger.info(
-        "Sujets du jour : %s",
-        " | ".join(t.keyword_fr for t in topics),
-    )
+    stories = get_multiple_stories(n=3)
+    logger.info("Histoires du jour : %s", " | ".join(s.title_fr for s in stories))
 
-    for i, topic in enumerate(topics, start=1):
+    for i, story in enumerate(stories, start=1):
         post_dir = output_dir / f"Post {i}"
         post_dir.mkdir()
 
-        content = generate_post(topic, slot="morning")
-        logger.info("Post %d — citation FR : '%s'", i, content.quote_fr)
+        content = generate_post(story, slot="morning")
+        logger.info("Post %d — histoire : '%s' (%s)", i, content.story_title, content.story_source)
 
         image_paths = render_post(content)
 
@@ -98,7 +94,6 @@ def generate_daily_posts() -> None:
         caption = _build_caption(content)
         (post_dir / "legende.txt").write_text(caption, encoding="utf-8")
 
-        # ── Envoi par email ───────────────────────────────────────────────────
         if slide_fr and slide_en:
             try:
                 send_post_email(i, slide_fr, slide_en, caption)
@@ -109,8 +104,8 @@ def generate_daily_posts() -> None:
 
         logger.info("Post %d enregistre dans %s", i, post_dir)
 
-    for topic in topics:
-        record_topic_used(topic.keyword_fr)
+    for story in stories:
+        record_topic_used(story.title_fr)
 
     try:
         os.startfile(str(output_dir))
@@ -121,6 +116,6 @@ def generate_daily_posts() -> None:
     print(f"  3 posts generes et envoyes par email !")
     print(f"  Dossier : {output_dir}")
     print(f"{'='*55}\n")
-    for i, topic in enumerate(topics, 1):
-        print(f"  Post {i} : {topic.keyword_fr}")
+    for i, story in enumerate(stories, 1):
+        print(f"  Post {i} : {story.title_fr} ({story.source})")
     print()
